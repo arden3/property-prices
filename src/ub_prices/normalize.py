@@ -550,6 +550,7 @@ def build_listing_record(
         is_business=detail.is_business,
         published_label=detail.published_label,
         description=detail.description.strip(),
+        image_urls=list(detail.image_urls[:5]),
         is_active=not detail.is_closed,
     )
     enrich_listing_record(record)

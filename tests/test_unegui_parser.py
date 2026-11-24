@@ -30,6 +30,10 @@ def test_parse_search_page_rsc():
                 "rubric": {"id": 1879, "slug": "3-r"},
                 "user": {"id": 629770, "name": "Отгонтуяа", "is_bussiness": True},
                 "img_count": 14,
+                "images": [
+                    "https://cdn1.unegui.mn/media/cache1/a.webp",
+                    "https://cdn1.unegui.mn/media/cache1/b.webp",
+                ],
             }
         ],
     }
@@ -44,6 +48,10 @@ def test_parse_search_page_rsc():
     assert c.rubric_slug == "3-r"
     assert c.price_without_currency == "830000000"
     assert c.is_business is True
+    assert c.image_urls == [
+        "https://cdn1.unegui.mn/media/cache1/a.webp",
+        "https://cdn1.unegui.mn/media/cache1/b.webp",
+    ]
 
 
 def test_parse_detail_page_rsc():
@@ -77,6 +85,12 @@ def test_parse_detail_page_rsc():
             {"slug": "3-r"},
         ],
         "user": {"id": 629770, "name": "Отгонтуяа", "is_bussiness": True},
+        "gallery": {
+            "full": [
+                "https://cdn1.unegui.mn/media/cache1/full1.webp",
+                "https://cdn1.unegui.mn/media/cache1/full2.webp",
+            ]
+        },
     }
     html = _wrap_rsc(payload)
     detail = parse_detail_page(
@@ -91,3 +105,7 @@ def test_parse_detail_page_rsc():
     assert detail.features["Хэдэн давхарт"] == "3"
     assert detail.lat == 47.88927
     assert detail.is_closed is False
+    assert detail.image_urls == [
+        "https://cdn1.unegui.mn/media/cache1/full1.webp",
+        "https://cdn1.unegui.mn/media/cache1/full2.webp",
+    ]

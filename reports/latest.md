@@ -1,6 +1,6 @@
 # Ulaanbaatar Property Prices — Daily Digest
 
-_Generated: 2026-11-24 07:06 UTC · Scope: 12 Khan-Uul / Zaisan complexes · 3–5 өрөө (2–4 bed) · ≥ 60 m²_
+_Generated: 2026-11-24 07:12 UTC · Scope: 12 Khan-Uul / Zaisan complexes · 3–5 өрөө (2–4 bed) · ≥ 60 m²_
 
 ## Latest Scan Status
 - **Status:** `partial` · **Source:** `unegui` · **Run ID:** `2026-11-24_dbd96dc8`

@@ -53,6 +53,7 @@ class IndexCard(BaseModel):
     seller_name: str = ""
     is_business: Optional[bool] = None
     img_count: int = 0
+    image_urls: list[str] = Field(default_factory=list)
 
 
 class ListingDetail(BaseModel):
@@ -81,6 +82,7 @@ class ListingDetail(BaseModel):
     seller_name: str = ""
     is_business: Optional[bool] = None
     features: dict[str, str] = Field(default_factory=dict)
+    image_urls: list[str] = Field(default_factory=list)
 
 
 class ListingRecord(BaseModel):
@@ -136,6 +138,7 @@ class ListingRecord(BaseModel):
     is_business: Optional[bool] = None
     published_label: str = ""
     description: str = ""
+    image_urls: list[str] = Field(default_factory=list)
 
     first_seen_at: str = Field(default_factory=utc_now_iso)
     last_seen_at: str = Field(default_factory=utc_now_iso)

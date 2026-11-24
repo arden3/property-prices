@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import sqlite3
 from pathlib import Path
 
@@ -55,6 +56,7 @@ CREATE TABLE listings (
     is_business INTEGER,
     published_label TEXT,
     description TEXT,
+    image_urls_json TEXT NOT NULL DEFAULT '[]',
     first_seen_at TEXT NOT NULL,
     last_seen_at TEXT NOT NULL,
     missed_scans INTEGER NOT NULL DEFAULT 0,
@@ -112,7 +114,8 @@ WITH fp_stats AS (
         MAX(faces_east) AS any_east,
         MAX(faces_north) AS any_north,
         MAX(CASE WHEN parking_status = 'included' THEN 2 WHEN parking_status = 'available' THEN 1 ELSE 0 END) AS best_parking_rank,
-        MAX(start_price_mnt) AS max_start_price_mnt
+        MAX(start_price_mnt) AS max_start_price_mnt,
+        MAX(CASE WHEN image_urls_json != '[]' THEN image_urls_json ELSE NULL END) AS any_image_urls_json
     FROM listings
     WHERE is_active = 1
       AND price_anomaly = 0
@@ -130,10 +133,15 @@ ranked AS (
         s.any_north,
         s.best_parking_rank,
         COALESCE(l.start_price_mnt, s.max_start_price_mnt) AS effective_start_price_mnt,
+        CASE
+            WHEN l.image_urls_json != '[]' THEN l.image_urls_json
+            ELSE COALESCE(s.any_image_urls_json, '[]')
+        END AS effective_image_urls_json,
         ROW_NUMBER() OVER (
             PARTITION BY l.unit_fingerprint
             ORDER BY
                 l.total_price_mnt ASC,
+                (CASE WHEN l.image_urls_json != '[]' THEN 1 ELSE 0 END) DESC,
                 (CASE WHEN l.window_facing != '' THEN 1 ELSE 0 END) DESC,
                 (CASE WHEN l.parking_status IN ('included', 'available') THEN 1 ELSE 0 END) DESC,
                 l.last_seen_at DESC
@@ -397,6 +405,7 @@ scored AS (
         ) AS family_score,
         d.duplicate_listing_count,
         d.duplicate_urls,
+        d.effective_image_urls_json AS image_urls_json,
         d.unit_fingerprint,
         d.first_seen_at,
         d.last_seen_at,
@@ -443,10 +452,10 @@ def build_sqlite_db(data_dir: Path, db_path: Path | None = None) -> Path:
                 raw_price_text, start_price_text, start_price_mnt, currency,
                 price_basis, total_price_mnt, price_per_sqm_mnt, price_anomaly,
                 price_anomaly_reason, unit_fingerprint, seller_id, seller_name, is_business,
-                published_label, description, first_seen_at, last_seen_at, missed_scans, is_active
+                published_label, description, image_urls_json, first_seen_at, last_seen_at, missed_scans, is_active
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             """,
             [
@@ -462,7 +471,9 @@ def build_sqlite_db(data_dir: Path, db_path: Path | None = None) -> Path:
                     r.price_per_sqm_mnt, int(r.price_anomaly), r.price_anomaly_reason,
                     r.unit_fingerprint, r.seller_id, r.seller_name,
                     None if r.is_business is None else int(r.is_business),
-                    r.published_label, r.description, r.first_seen_at, r.last_seen_at,
+                    r.published_label, r.description,
+                    json.dumps(r.image_urls[:5], ensure_ascii=False),
+                    r.first_seen_at, r.last_seen_at,
                     r.missed_scans, int(r.is_active),
                 )
                 for r in listings.values()

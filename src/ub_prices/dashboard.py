@@ -22,26 +22,31 @@ def _load_dashboard_payload(
             "SELECT * FROM scrape_runs ORDER BY started_at DESC LIMIT 1"
         ).fetchone()
 
-        # Deduplicated active listings (with broker count & family preference fields)
-        dedup_rows = [
-            dict(r)
-            for r in conn.execute(
-                """
-                SELECT
-                    source, external_id, url, deal_type, complex_slug, complex_name, zone,
-                    title, rooms, area_sqm, floor, total_floors, floor_tier,
-                    year_built, window_facing, faces_south, faces_west,
-                    parking_status, payment_terms, furnished,
-                    raw_price_text, start_price_text, start_price_mnt,
-                    total_price_mnt, price_per_sqm_mnt, price_basis,
-                    seller_cut_pct, tracked_drop_pct, effective_drop_pct,
-                    family_score, duplicate_listing_count, duplicate_urls,
-                    unit_fingerprint, first_seen_at, last_seen_at, published_label
-                FROM v_family_shortlist
-                ORDER BY family_score DESC, total_price_mnt ASC
-                """
-            ).fetchall()
-        ]
+        # Deduplicated active listings (with broker count, photos, & family preference fields)
+        dedup_rows: list[dict[str, Any]] = []
+        for r in conn.execute(
+            """
+            SELECT
+                source, external_id, url, deal_type, complex_slug, complex_name, zone,
+                title, rooms, area_sqm, floor, total_floors, floor_tier,
+                year_built, window_facing, faces_south, faces_west,
+                parking_status, payment_terms, furnished,
+                raw_price_text, start_price_text, start_price_mnt,
+                total_price_mnt, price_per_sqm_mnt, price_basis,
+                seller_cut_pct, tracked_drop_pct, effective_drop_pct,
+                family_score, duplicate_listing_count, duplicate_urls,
+                image_urls_json, unit_fingerprint, first_seen_at, last_seen_at, published_label
+            FROM v_family_shortlist
+            ORDER BY family_score DESC, total_price_mnt ASC
+            """
+        ).fetchall():
+            row_dict = dict(r)
+            raw_imgs = row_dict.pop("image_urls_json", "[]")
+            try:
+                row_dict["image_urls"] = json.loads(raw_imgs) if raw_imgs else []
+            except json.JSONDecodeError:
+                row_dict["image_urls"] = []
+            dedup_rows.append(row_dict)
 
         # Raw active non-anomaly listings count (for transparency badge)
         raw_active_count = conn.execute(
@@ -370,11 +375,92 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 14px;
+      overflow: hidden;
       box-shadow: var(--shadow);
       display: flex;
       flex-direction: column;
+    }
+    .l-body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
       gap: 8px;
+      flex: 1;
+    }
+    .photo-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 10;
+      background: #ecebe6;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .photo-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .photo-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(15, 23, 42, 0.62);
+      color: #fff;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .photo-nav:hover { background: rgba(15, 23, 42, 0.88); }
+    .photo-prev { left: 8px; }
+    .photo-next { right: 8px; }
+    .photo-count {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(15, 23, 42, 0.68);
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: 650;
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+    .lightbox {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.86);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+      max-width: 92vw;
+      max-height: 86vh;
+      border-radius: 10px;
+      object-fit: contain;
+    }
+    .lb-close {
+      position: fixed;
+      top: 16px;
+      right: 20px;
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+      border: none;
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      font-size: 1.4rem;
+      cursor: pointer;
     }
     .l-top {
       display: flex;
@@ -602,6 +688,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     </section>
   </div>
 
+  <div class="lightbox" id="lightbox" onclick="closeLightbox(event)">
+    <button class="lb-close" onclick="closeLightbox(event)">×</button>
+    <img id="lbImg" src="" alt="Apartment photo" referrerpolicy="no-referrer" />
+  </div>
+
   <script>
     const DATA = __DASHBOARD_JSON__;
 
@@ -747,30 +838,64 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
           ? [l.payment_terms, l.furnished ? l.furnished.replace("_", " ") : ""].filter(Boolean).join(" · ")
           : (l.year_built ? `Built ${l.year_built}` : "");
 
+        const imgs = Array.isArray(l.image_urls) ? l.image_urls : [];
+        const photoHtml = imgs.length
+          ? `<div class="photo-box" data-idx="0" data-imgs='${JSON.stringify(imgs).replace(/'/g, "&#39;")}'>
+               <img src="${imgs[0]}" alt="${l.complex_name}" loading="lazy" referrerpolicy="no-referrer" onclick="openLightbox(this.src)" onerror="this.closest('.photo-box').style.display='none'" />
+               ${imgs.length > 1 ? `<button class="photo-nav photo-prev" onclick="stepPhoto(event, -1)" aria-label="Previous photo">‹</button><button class="photo-nav photo-next" onclick="stepPhoto(event, 1)" aria-label="Next photo">›</button><span class="photo-count">1 / ${imgs.length}</span>` : ""}
+             </div>`
+          : "";
+
         return `
           <article class="l-card">
-            <div class="l-top">
-              <div>
-                <div>${dealBadge} <span class="score-pill">Match ${l.family_score}/6</span></div>
-                <div class="l-complex" style="margin-top:4px;">${l.complex_name}</div>
+            ${photoHtml}
+            <div class="l-body">
+              <div class="l-top">
+                <div>
+                  <div>${dealBadge} <span class="score-pill">Match ${l.family_score}/6</span></div>
+                  <div class="l-complex" style="margin-top:4px;">${l.complex_name}</div>
+                </div>
+                <div>
+                  <div class="l-price">${fmtM(l.total_price_mnt)}${l.deal_type === "rent" ? "/mo" : ""}</div>
+                  <div class="l-sqm">${l.deal_type === "sale" ? fmtSqm(l.price_per_sqm_mnt) : (l.price_per_sqm_mnt ? Math.round(l.price_per_sqm_mnt/1000) + "k ₮/m²" : "")}</div>
+                </div>
               </div>
-              <div>
-                <div class="l-price">${fmtM(l.total_price_mnt)}${l.deal_type === "rent" ? "/mo" : ""}</div>
-                <div class="l-sqm">${l.deal_type === "sale" ? fmtSqm(l.price_per_sqm_mnt) : (l.price_per_sqm_mnt ? Math.round(l.price_per_sqm_mnt/1000) + "k ₮/m²" : "")}</div>
+              <div class="l-specs">
+                <strong>${l.rooms} өрөө</strong> · <strong>${l.area_sqm} m²</strong> · ${floorTxt} ${termsTxt ? "· " + termsTxt : ""}
               </div>
-            </div>
-            <div class="l-specs">
-              <strong>${l.rooms} өрөө</strong> · <strong>${l.area_sqm} m²</strong> · ${floorTxt} ${termsTxt ? "· " + termsTxt : ""}
-            </div>
-            <div>${winBadge}${parkingBadge(l.parking_status)}${floorBadge}${cutBadge}${dupBadge}</div>
-            <div class="l-title">${l.title}</div>
-            <div class="l-footer">
-              <span style="color:var(--muted);">${l.published_label || l.first_seen_at.slice(0, 10)}</span>
-              <a class="btn-link" href="${l.url}" target="_blank" rel="noopener">Open on Unegui ↗</a>
+              <div>${winBadge}${parkingBadge(l.parking_status)}${floorBadge}${cutBadge}${dupBadge}</div>
+              <div class="l-title">${l.title}</div>
+              <div class="l-footer">
+                <span style="color:var(--muted);">${l.published_label || l.first_seen_at.slice(0, 10)}</span>
+                <a class="btn-link" href="${l.url}" target="_blank" rel="noopener">Open on Unegui ↗</a>
+              </div>
             </div>
           </article>
         `;
       }).join("");
+    }
+
+    function stepPhoto(ev, delta) {
+      ev.stopPropagation();
+      const box = ev.currentTarget.closest(".photo-box");
+      const imgs = JSON.parse(box.dataset.imgs || "[]");
+      if (imgs.length <= 1) return;
+      const next = (Number(box.dataset.idx || 0) + delta + imgs.length) % imgs.length;
+      box.dataset.idx = String(next);
+      box.querySelector("img").src = imgs[next];
+      const counter = box.querySelector(".photo-count");
+      if (counter) counter.textContent = `${next + 1} / ${imgs.length}`;
+    }
+
+    function openLightbox(src) {
+      document.getElementById("lbImg").src = src;
+      document.getElementById("lightbox").classList.add("open");
+    }
+
+    function closeLightbox(ev) {
+      if (ev.target.id === "lightbox" || ev.target.classList.contains("lb-close")) {
+        document.getElementById("lightbox").classList.remove("open");
+      }
     }
 
     function renderRvbTable() {

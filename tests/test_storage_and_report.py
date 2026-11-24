@@ -99,6 +99,7 @@ def test_full_lifecycle_scan_price_drop_delisting_and_views(tmp_path: Path):
             start_price_text="1,050,000,000 ₮",
             price_without_currency="960000000",
             features={"Талбай": "120 м²", "Хэдэн давхарт": "6", "Барилгын давхар": "9", "Гараж": "Байгаа"},
+            image_urls=["https://cdn1.unegui.mn/media/cache1/sample1.webp"],
         ),
         "1002": ListingDetail(
             source="unegui",
@@ -231,3 +232,4 @@ def test_full_lifecycle_scan_price_drop_delisting_and_views(tmp_path: Path):
     assert "Ulaanbaatar Family Property Tracker" in html
     assert "River Garden" in html
     assert "South, West" in html
+    assert "sample1.webp" in html

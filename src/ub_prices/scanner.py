@@ -223,6 +223,9 @@ def run_scan(
                 existing.is_active = True
                 if card.published_label:
                     existing.published_label = card.published_label
+                # Backfill photo URLs from search card for free if missing
+                if not existing.image_urls and card.image_urls:
+                    existing.image_urls = list(card.image_urls[:5])
                 continue
 
             if blocked:

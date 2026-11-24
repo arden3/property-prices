@@ -84,6 +84,10 @@ def parse_search_page(html: str, deal_type: DealType) -> tuple[list[IndexCard], 
                 continue
             rubric = ad.get("rubric") if isinstance(ad.get("rubric"), dict) else {}
             user = ad.get("user") if isinstance(ad.get("user"), dict) else {}
+            raw_imgs = ad.get("images") if isinstance(ad.get("images"), list) else []
+            img_urls = [str(u).strip() for u in raw_imgs if isinstance(u, str) and u.startswith("http")][:5]
+            if not img_urls and isinstance(ad.get("first_thumb"), str) and ad["first_thumb"].startswith("http"):
+                img_urls = [ad["first_thumb"].strip()]
             cards.append(
                 IndexCard(
                     source="unegui",
@@ -108,6 +112,7 @@ def parse_search_page(html: str, deal_type: DealType) -> tuple[list[IndexCard], 
                     if isinstance(user.get("is_bussiness"), bool)
                     else None,
                     img_count=int(ad.get("img_count") or 0),
+                    image_urls=img_urls,
                 )
             )
         return cards, has_next
@@ -208,6 +213,18 @@ def parse_detail_page(
         if price_wo_curr is None and fallback_card:
             price_wo_curr = fallback_card.price_without_currency
 
+        # Extract up to 5 crisp photo URLs from gallery (full -> small -> preview -> index card fallback)
+        gallery = obj.get("gallery") if isinstance(obj.get("gallery"), dict) else {}
+        img_urls: list[str] = []
+        for tier in ("full", "small", "preview"):
+            cand = gallery.get(tier)
+            if isinstance(cand, list) and cand:
+                img_urls = [str(u).strip() for u in cand if isinstance(u, str) and u.startswith("http")][:5]
+                if img_urls:
+                    break
+        if not img_urls and fallback_card and fallback_card.image_urls:
+            img_urls = list(fallback_card.image_urls[:5])
+
         return ListingDetail(
             source="unegui",
             external_id=str(external_id),
@@ -249,6 +266,7 @@ def parse_detail_page(
             if isinstance(user.get("is_bussiness"), bool)
             else (fallback_card.is_business if fallback_card else None),
             features=features,
+            image_urls=img_urls,
         )
 
     # Graceful fallback to BeautifulSoup HTML parsing
