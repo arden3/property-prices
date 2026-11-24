@@ -1,12 +1,12 @@
 # Ulaanbaatar Property Prices — Daily Digest
 
-_Generated: 2026-11-24 13:29 UTC · Scope: 8 Khan-Uul / Zaisan complexes · 3–5 өрөө (2–4 bed) · ≥ 60 m²_
+_Generated: 2026-11-24 13:30 UTC · Scope: 8 Khan-Uul / Zaisan complexes · 3–5 өрөө (2–4 bed) · ≥ 60 m²_
 
 ## Latest Scan Status
 - **Status:** `partial` · **Source:** `unegui` · **Run ID:** `2026-11-24_5a602414`
 - **Activity:** 83 requests · 1065 matched ads · **+0 new** · **0 price changes** · **0 delisted**
 - **Notes:** `detail_cap_reached:1`
-- **Active Inventory:** **32 unique sale units** (58 broker ads) · **26 unique rent units** (54 broker ads)
+- **Active Inventory:** **32 unique sale units** (58 broker ads) · **24 unique rent units** (52 broker ads)
 
 ## 8-Complex Market Snapshot (Deduplicated Active Units)
 
@@ -17,7 +17,7 @@ _Generated: 2026-11-24 13:29 UTC · Scope: 8 Khan-Uul / Zaisan complexes · 3–
 | **Time Square** | Marshall / Tuul River | 1 | 7.58M ₮/m² | 1.25B ₮ | 2 | 5.6M ₮ | 6.21% | 16.1 yrs |
 | **Khan Hills** | Marshall / Tuul River | 6 | 7.40M ₮/m² | 1.05B ₮ | 3 | 4.1M ₮ | 5.79% | 17.3 yrs |
 | **King Tower** | Marshall / Tuul River | 7 | 7.00M ₮/m² | 688.0M ₮ | 7 | 3.6M ₮ | 6.23% | 16.0 yrs |
-| **Japan Town** | 120 Myangat / Ikh Mongol | 4 | 7.70M ₮/m² | 812.5M ₮ | 5 | 4.0M ₮ | 6.47% | 15.4 yrs |
+| **Japan Town** | 120 Myangat / Ikh Mongol | 4 | 7.70M ₮/m² | 812.5M ₮ | 3 | 3.3M ₮ | 6.68% | 15.0 yrs |
 | **Jardin Residence** | Zaisan Foothills | 4 | 6.16M ₮/m² | 1.16B ₮ | 1 | 7.0M ₮ | 7.18% | 13.9 yrs |
 | **Seoul Royal County** | Zaisan Foothills | 3 | 5.50M ₮/m² | 1.15B ₮ | 1 | 5.5M ₮ | 6.00% | 16.7 yrs |
 
@@ -95,13 +95,11 @@ _Generated: 2026-11-24 13:29 UTC · Scope: 8 Khan-Uul / Zaisan complexes · 3–
 | River Garden | 5 өрөө | 200.0 m² | 7/7F (high) | — | Incl. | 11.0M ₮ | 3+1 | 1x | [View](https://www.unegui.mn/adv/10913931_river-garden-1-t-5-oroo/) |
 | Buddha Vista | 4 өрөө | 122.0 m² | 6/16F | — | Incl. | 6.5M ₮ | 3+1 | 1x | [View](https://www.unegui.mn/adv/10915992_budda-vista-khotkhond-122m2-4-oroo-oron-suuts/) |
 | Japan Town | 3 өрөө | 80.0 m² | 6/7F (high) | West | No | 4.0M ₮ | 3+1 | 2x | [View](https://www.unegui.mn/adv/10871844_iapon-taun-khotkhond-buren-tavilgatai-3-oroo-bair-tureesluulne/) |
-| Japan Town | 3 өрөө | 103.5 m² | 2/15F | South, East, North | No | 4.3M ₮ | 2+1 | 1x | [View](https://www.unegui.mn/adv/10887409_khan-uul-tokio-taun1-t-3-oroo-bair/) |
 | Jardin Residence | 4 өрөө | 190.0 m² | 3/6F | — | Incl. | 7.0M ₮ | 3+1 | 3x | [View](https://www.unegui.mn/adv/10894902_jardin-residence-khotkhon-4-oroo-190mkv-bair/) |
 | King Tower | 3 өрөө | 79.0 m² | 10/16F (high) | West, North | No | 3.5M ₮ | Тохиролцоно | 1x | [View](https://www.unegui.mn/adv/10867889_king-tower-khotkhond-buren-tavilgatai-3-oroo-bair/) |
 | King Tower | 3 өрөө | 78.0 m² | 15/24F (high) | — | Avail. | 3.6M ₮ | 3+1 | 1x | [View](https://www.unegui.mn/adv/10919801_khud-gerlug-khotkhond-3oroo-78mkv-bair/) |
 | River Garden | 4 өрөө | 113.0 m² | 4/7F (high) | West, North | No | 6.5M ₮ | 3+1 | 3x | [View](https://www.unegui.mn/adv/10875745_river-garden-2-khotkhon-113-5m-kv-4-oroo-buren-tavilgatai-bair-tureesluulne/) |
 | Japan Town | 3 өрөө | 83.0 m² | 5/7F (high) | — | No | 3.2M ₮ | 3+1 | 2x | [View](https://www.unegui.mn/adv/10826791_japan-town-c1-83-43m2-3-oroo-kholsuulne/) |
-| Japan Town | 5 өрөө | 220.0 m² | 5/7F (high) | — | No | 7.5M ₮ | 3+1 | 1x | [View](https://www.unegui.mn/adv/10811200_japan-town-baruun-royal-garden-5-oroo/) |
 | Khan Hills | 3 өрөө | 106.0 m² | 10/18F (high) | — | No | 3.7M ₮ | 3+1 | 1x | [View](https://www.unegui.mn/adv/10918637_khan-hills-khotkhond-106m2-buren-tavilgatai-3-oroo-bair/) |
 | River Garden | 3 өрөө | 72.0 m² | 4/16F | West, North | No | 5.0M ₮ | 3+1 | 1x | [View](https://www.unegui.mn/adv/10894033_river-garden-3oroo-tureesluulne/) |
 | King Tower | 3 өрөө | 94.0 m² | 6/16F | — | No | 3.0M ₮ | 2+1 | 1x | [View](https://www.unegui.mn/adv/10749598_khotyn-tovd-tavilgatai-3-oroo-urt-khugatsaand-kholsluulne/) |
@@ -167,8 +165,7 @@ _Generated: 2026-11-24 13:29 UTC · Scope: 8 Khan-Uul / Zaisan complexes · 3–
 | Complex | Rooms | Unique Units | Avg Area | Min Rent/mo | Avg Rent/mo | Max Rent/mo |
 | :--- | ---: | ---: | ---: | ---: | ---: | ---: |
 | Buddha Vista | 4 өрөө | 2 | 122.0 m² | 6.0M ₮ | 6.2M ₮ | 6.5M ₮ |
-| Japan Town | 3 өрөө | 4 | 85.9 m² | 3.2M ₮ | 3.7M ₮ | 4.3M ₮ |
-| Japan Town | 5 өрөө | 1 | 220.0 m² | 7.5M ₮ | 7.5M ₮ | 7.5M ₮ |
+| Japan Town | 3 өрөө | 3 | 80.0 m² | 3.2M ₮ | 3.5M ₮ | 4.0M ₮ |
 | Jardin Residence | 4 өрөө | 1 | 190.0 m² | 7.0M ₮ | 7.0M ₮ | 7.0M ₮ |
 | Khan Hills | 3 өрөө | 2 | 106.0 m² | 3.7M ₮ | 3.9M ₮ | 4.1M ₮ |
 | Khan Hills | 4 өрөө | 1 | 140.0 m² | 5.0M ₮ | 5.0M ₮ | 5.0M ₮ |

@@ -137,18 +137,24 @@ class ComplexMatcher:
         return bool(re.search(rf"(?<![\w]){re.escape(needle)}(?![\w])", haystack, flags=re.UNICODE))
 
     def _match_in_field(
-        self, raw_text: str, field_name: str, allow_fuzzy: bool = True
+        self, raw_text: str, field_name: str, allow_fuzzy: bool = True, title_norm: str = ""
     ) -> Optional[MatchResult]:
         if not raw_text or not raw_text.strip():
             return None
 
         text_norm = normalize_text(raw_text)
+        excl_haystack = f"{title_norm} {text_norm}".strip()
         text_lat = transliterate_to_latin(raw_text)
         tokens_lat = text_lat.split()
 
         for comp, norm_aliases, lat_aliases, norm_excludes in self._compiled:
-            # Skip if an explicit competing complex name appears (e.g., "river stone", "royal garden", "tokyo town")
-            if any(self._contains_whole_phrase(text_norm, ex) for ex in norm_excludes):
+            # Skip if an explicit competing complex name appears in title or this field
+            # (e.g., "royal garden", "токио таун1", "river stone") — prevents Unegui's location tag
+            # from overriding a title that clearly names a neighboring complex.
+            if any(
+                re.search(rf"(?<![\w]){re.escape(ex)}", excl_haystack, flags=re.UNICODE)
+                for ex in norm_excludes
+            ):
                 continue
 
             # 1. Exact normalized phrase match
@@ -245,12 +251,15 @@ class ComplexMatcher:
             return MatchResult(matched=False, rejected_reason=excl)
 
         # Priority: 1) Title, 2) Structured Unegui Location (e.g. "Улаанбаатар — Хан-Уул — River Garden"), 3) Description
+        title_norm = normalize_text(title)
         for field_name, text, allow_fuzzy in (
             ("title", title, True),
             ("location", location_text, False),
             ("description", description, False),
         ):
-            res = self._match_in_field(text, field_name, allow_fuzzy=allow_fuzzy)
+            res = self._match_in_field(
+                text, field_name, allow_fuzzy=allow_fuzzy, title_norm=title_norm
+            )
             if res is not None:
                 return res
 
