@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ulaanbaatar Family Property Tracker — 12 Complexes</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #f6f5f1;
+      --surface: #ffffff;
+      --surface-soft: #f9fafb;
+      --border: #e5e7eb;
+      --text: #18181b;
+      --muted: #6b7280;
+      --accent: #0f766e;
+      --accent-soft: #ccfbf1;
+      --accent-dark: #115e59;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --amber: #b45309;
+      --amber-soft: #fef3c7;
+      --rose: #be123c;
+      --rose-soft: #ffe4e6;
+      --green: #15803d;
+      --green-soft: #dcfce7;
+      --radius: 14px;
+      --shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 20px 16px 64px;
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 2.5vw, 1.85rem);
+      font-weight: 750;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+    .meta-pill {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      box-shadow: var(--shadow);
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+    }
+    .kpi-label {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      font-weight: 600;
+    }
+    .kpi-value {
+      font-size: 1.45rem;
+      font-weight: 750;
+      margin-top: 4px;
+      letter-spacing: -0.02em;
+    }
+    .kpi-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 10px;
+    }
+    .tab-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .tab-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+    .card h2 {
+      margin: 0 0 12px;
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      align-items: end;
+    }
+    .field label {
+      display: block;
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .field select, .field input {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-soft);
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      align-items: center;
+    }
+    .chip-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-right: 4px;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface-soft);
+      font-size: 0.84rem;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+    .chip.on {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent-dark);
+    }
+    .chip-reset {
+      margin-left: auto;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-size: 0.82rem;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .chart-wrap {
+      position: relative;
+      height: 310px;
+    }
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 10px;
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    th {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      background: var(--surface-soft);
+      position: sticky;
+      top: 0;
+    }
+    th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tr:hover td { background: #fafaf9; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 650;
+      margin-right: 4px;
+    }
+    .b-rent { background: var(--blue-soft); color: var(--blue); }
+    .b-sale { background: var(--amber-soft); color: var(--amber); }
+    .b-good { background: var(--green-soft); color: var(--green); }
+    .b-cut { background: var(--rose-soft); color: var(--rose); }
+    .b-neutral { background: #f3f4f6; color: #374151; }
+    .listing-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 12px;
+    }
+    .l-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .l-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .l-complex { font-weight: 750; font-size: 0.98rem; }
+    .l-price {
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+      text-align: right;
+    }
+    .l-sqm { font-size: 0.78rem; color: var(--muted); text-align: right; }
+    .l-specs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 0.84rem;
+      color: #3f3f46;
+    }
+    .l-title {
+      font-size: 0.84rem;
+      color: var(--muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .l-footer {
+      margin-top: auto;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+    }
+    .btn-link {
+      display: inline-block;
+      background: var(--accent);
+      color: #fff;
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.82rem;
+    }
+    .btn-link:hover { background: var(--accent-dark); }
+    .score-pill {
+      font-weight: 700;
+      font-size: 0.78rem;
+      color: var(--accent-dark);
+      background: var(--accent-soft);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .empty {
+      text-align: center;
+      color: var(--muted);
+      padding: 36px 16px;
+      font-size: 0.95rem;
+    }
+    @media (max-width: 640px) {
+      .container { padding: 14px 12px 48px; }
+      .chart-wrap { height: 260px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>Ulaanbaatar Property Prices</h1>
+        <div class="subtitle">12 Khan-Uul &amp; Zaisan Complexes · 3–5 өрөө (2–4 Bed) · ≥ 60 m² · Deduplicated</div>
+      </div>
+      <div class="meta-pill" id="metaPill">Loading...</div>
+    </header>
+
+    <section class="kpi-grid" id="kpiGrid"></section>
+
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="explorer">Apartments Explorer</button>
+      <button class="tab-btn" data-tab="overview">12-Complex Rent vs. Buy</button>
+      <button class="tab-btn" data-tab="drops">Price Cuts &amp; Trends</button>
+    </nav>
+
+    <!-- TAB 1: APARTMENTS EXPLORER -->
+    <section class="tab-panel active" id="tab-explorer">
+      <div class="card">
+        <div class="filters">
+          <div class="field">
+            <label for="fDeal">Deal Type</label>
+            <select id="fDeal">
+              <option value="all">All (Rent + Sale)</option>
+              <option value="rent">Rent (Түрээс)</option>
+              <option value="sale">Sale (Зарна)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="fComplex">Complex</label>
+            <select id="fComplex"><option value="all">All 12 Complexes</option></select>
+          </div>
+          <div class="field">
+            <label for="fRooms">Rooms (өрөө)</label>
+            <select id="fRooms">
+              <option value="all">3–5 өрөө (All)</option>
+              <option value="3">3 өрөө (2 Bed)</option>
+              <option value="4">4 өрөө (3 Bed)</option>
+              <option value="5">5 өрөө (4 Bed)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="fMinArea">Min Area (m²)</label>
+            <input id="fMinArea" type="number" min="60" step="10" placeholder="60" />
+          </div>
+          <div class="field">
+            <label for="fMaxPrice">Max Price (M ₮)</label>
+            <input id="fMaxPrice" type="number" min="0" step="1" placeholder="Any" />
+          </div>
+          <div class="field">
+            <label for="fSort">Sort By</label>
+            <select id="fSort">
+              <option value="family">Family Match Score</option>
+              <option value="sqm_asc">Lowest ₮/m²</option>
+              <option value="price_asc">Lowest Price</option>
+              <option value="cut_desc">Biggest Price Cut %</option>
+              <option value="area_desc">Largest Area (m²)</option>
+              <option value="newest">Newest First</option>
+            </select>
+          </div>
+        </div>
+        <div class="chip-row">
+          <span class="chip-label">Family Preferences:</span>
+          <span class="chip" id="cSouthWest" data-key="southWest">☀️ South / West Windows</span>
+          <span class="chip" id="cParking" data-key="parking">🚗 Interior Parking</span>
+          <span class="chip" id="cHighFloor" data-key="highFloor">🏢 Higher Floor</span>
+          <span class="chip" id="cPriceCut" data-key="priceCut">📉 Price Cut Only</span>
+          <button class="chip-reset" id="btnReset">Reset filters</button>
+        </div>
+      </div>
+
+      <div id="resultCount" class="subtitle" style="margin-bottom: 10px;"></div>
+      <div class="listing-cards" id="listingCards"></div>
+    </section>
+
+    <!-- TAB 2: 12-COMPLEX RENT VS BUY -->
+    <section class="tab-panel" id="tab-overview">
+      <div class="charts-grid">
+        <div class="card">
+          <h2>Median Sale ₮/m² by Complex</h2>
+          <div class="chart-wrap"><canvas id="chartSaleSqm"></canvas></div>
+        </div>
+        <div class="card">
+          <h2>Median Monthly Rent (M ₮) by Complex</h2>
+          <div class="chart-wrap"><canvas id="chartRentMo"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Value Scatter: Area (m²) vs. Price (Click any dot to open listing)</h2>
+        <div style="margin-bottom: 8px;">
+          <select id="scatterDeal" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);">
+            <option value="sale">Sale Listings (Total M ₮)</option>
+            <option value="rent">Rent Listings (Monthly M ₮)</option>
+          </select>
+        </div>
+        <div class="chart-wrap" style="height: 340px;"><canvas id="chartScatter"></canvas></div>
+      </div>
+
+      <div class="card">
+        <h2>12-Complex Market &amp; Rent-vs-Buy Summary (Deduplicated Units)</h2>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Complex</th>
+                <th>Zone</th>
+                <th class="num">Sale Units</th>
+                <th class="num">Median Sale ₮/m²</th>
+                <th class="num">Median Total</th>
+                <th class="num">Rent Units</th>
+                <th class="num">Median Rent/mo</th>
+                <th class="num">Gross Yield</th>
+                <th class="num">Price / Annual Rent</th>
+              </tr>
+            </thead>
+            <tbody id="rvbBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: PRICE CUTS & TRENDS -->
+    <section class="tab-panel" id="tab-drops">
+      <div class="card">
+        <h2>Active Seller Price Cuts (Tracked Drops + Unegui Start-Price Reductions)</h2>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Deal</th>
+                <th>Complex</th>
+                <th>Unit</th>
+                <th>Preferences</th>
+                <th class="num">Original</th>
+                <th class="num">Current</th>
+                <th class="num">Cut</th>
+                <th class="num">Ads</th>
+                <th>Link</th>
+              </tr>
+            </thead>
+            <tbody id="dropsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Daily Average Asking ₮/m² Over Time</h2>
+        <div class="subtitle" style="margin-bottom: 10px;">Grows automatically as each day's scan records new observations.</div>
+        <div class="chart-wrap"><canvas id="chartTrends"></canvas></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const DATA = {"generated_at": "2026-11-24 07:06 UTC", "latest_run": {"run_id": "2026-11-24_dbd96dc8", "source": "unegui", "started_at": "2026-11-24T06:36:50+00:00", "finished_at": "2026-11-24T07:00:42+00:00", "status": "partial", "is_full_scan": 1, "requests_made": 253, "index_cards_seen": 6880, "matched_candidates": 1180, "details_fetched": 120, "new_listings": 113, "price_changes": 0, "delisted_count": 0, "notes": "detail_cap_reached:120"}, "raw_active_count": 164, "dedup_active_count": 105, "complexes": [{"slug": "river-garden", "name": "River Garden", "zone": "Marshall / Tuul River", "sale_units": 6, "sale_median_sqm_mnt": 9566667, "sale_median_total_mnt": 972500000, "rent_units": 7, "median_monthly_rent_mnt": 7800000, "median_rent_per_sqm_mnt": 55000, "gross_yield_pct_sqm": 6.9, "price_to_rent_years": 14.5}, {"slug": "bella-vista", "name": "Bella Vista", "zone": "Zaisan Foothills", "sale_units": 5, "sale_median_sqm_mnt": 9740260, "sale_median_total_mnt": 1500000000, "rent_units": 5, "median_monthly_rent_mnt": 8000000, "median_rent_per_sqm_mnt": 56338, "gross_yield_pct_sqm": 6.94, "price_to_rent_years": 14.4}, {"slug": "buddha-vista", "name": "Buddha Vista", "zone": "Zaisan Foothills", "sale_units": 3, "sale_median_sqm_mnt": 5720339, "sale_median_total_mnt": 1350000000, "rent_units": 3, "median_monthly_rent_mnt": 6000000, "median_rent_per_sqm_mnt": 49180, "gross_yield_pct_sqm": 10.32, "price_to_rent_years": 9.7}, {"slug": "time-square", "name": "Time Square", "zone": "Marshall / Tuul River", "sale_units": 2, "sale_median_sqm_mnt": 7787879, "sale_median_total_mnt": 1285000000, "rent_units": 4, "median_monthly_rent_mnt": 5600000, "median_rent_per_sqm_mnt": 39032, "gross_yield_pct_sqm": 6.01, "price_to_rent_years": 16.6}, {"slug": "khan-hills", "name": "Khan Hills", "zone": "Marshall / Tuul River", "sale_units": 6, "sale_median_sqm_mnt": 7400822, "sale_median_total_mnt": 1055000000, "rent_units": 4, "median_monthly_rent_mnt": 4550000, "median_rent_per_sqm_mnt": 35714, "gross_yield_pct_sqm": 5.79, "price_to_rent_years": 17.3}, {"slug": "king-tower", "name": "King Tower", "zone": "Marshall / Tuul River", "sale_units": 7, "sale_median_sqm_mnt": 7000000, "sale_median_total_mnt": 688000000, "rent_units": 8, "median_monthly_rent_mnt": 3550000, "median_rent_per_sqm_mnt": 35424, "gross_yield_pct_sqm": 6.07, "price_to_rent_years": 16.5}, {"slug": "marshall-town", "name": "Marshall Town", "zone": "Marshall / Tuul River", "sale_units": 4, "sale_median_sqm_mnt": 4500000, "sale_median_total_mnt": 521000000, "rent_units": 1, "median_monthly_rent_mnt": 4000000, "median_rent_per_sqm_mnt": 22222, "gross_yield_pct_sqm": 5.93, "price_to_rent_years": 16.9}, {"slug": "japan-town", "name": "Japan Town", "zone": "120 Myangat / Ikh Mongol", "sale_units": 5, "sale_median_sqm_mnt": 6930000, "sale_median_total_mnt": 693000000, "rent_units": 5, "median_monthly_rent_mnt": 4000000, "median_rent_per_sqm_mnt": 41546, "gross_yield_pct_sqm": 7.19, "price_to_rent_years": 13.9}, {"slug": "vega-city", "name": "Vega City", "zone": "120 Myangat / Orchlon", "sale_units": 7, "sale_median_sqm_mnt": 10805501, "sale_median_total_mnt": 1100000000, "rent_units": 7, "median_monthly_rent_mnt": 7000000, "median_rent_per_sqm_mnt": 55556, "gross_yield_pct_sqm": 6.17, "price_to_rent_years": 16.2}, {"slug": "gerlug-vista", "name": "Gerlug Vista", "zone": "National Park / E-Mart", "sale_units": 2, "sale_median_sqm_mnt": 12118644, "sale_median_total_mnt": 1430000000, "rent_units": 4, "median_monthly_rent_mnt": 4400000, "median_rent_per_sqm_mnt": 51615, "gross_yield_pct_sqm": 5.11, "price_to_rent_years": 19.6}, {"slug": "jardin", "name": "Jardin Residence", "zone": "Zaisan Foothills", "sale_units": 4, "sale_median_sqm_mnt": 6157434, "sale_median_total_mnt": 1160000000, "rent_units": 1, "median_monthly_rent_mnt": 7000000, "median_rent_per_sqm_mnt": 36842, "gross_yield_pct_sqm": 7.18, "price_to_rent_years": 13.9}, {"slug": "seoul-royal-county", "name": "Seoul Royal County", "zone": "Zaisan Foothills", "sale_units": 3, "sale_median_sqm_mnt": 5500000, "sale_median_total_mnt": 1150000000, "rent_units": 2, "median_monthly_rent_mnt": 5500000, "median_rent_per_sqm_mnt": 27500, "gross_yield_pct_sqm": 6.0, "price_to_rent_years": 16.7}], "listings": [{"source": "unegui", "external_id": "10807649", "url": "https://www.unegui.mn/adv/10807649_river-garden-1d-buren-tavilgatai-2-garazhtai-tseverkhen-bair/", "deal_type": "rent", "complex_slug": "river-garden", "complex_name": "River Garden", "zone": "Marshall / Tuul River", "title": "River garden 1-д бүрэн тавилгатай 2 гаражтай 5 өрөө 201м2 байр", "rooms": 5, "area_sqm": 201.0, "floor": 5, "total_floors": 7, "floor_tier": "high", "year_built": 2016, "window_facing": "South, West, East", "faces_south": 1, "faces_west": 1, "parking_status": "included", "payment_terms": "6+1", "furnished": "fully_furnished", "raw_price_text": "7.8 сая ₮", "start_price_text": "8,300,000 ₮", "start_price_mnt": 8300000, "total_price_mnt": 7800000, "price_per_sqm_mnt": 38806, "price_basis": "monthly", "seller_cut_pct": 6.02, "tracked_drop_pct": 0.0, "effective_drop_pct": 6.02, "family_score": 6, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10807649_river-garden-1d-buren-tavilgatai-2-garazhtai-tseverkhen-bair/", "unit_fingerprint": "river-garden|rent|5r|202sqm|f5", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "4 өдрийн өмнө"}, {"source": "unegui", "external_id": "10685878", "url": "https://www.unegui.mn/adv/10685878_seoul-royal-county-khotkhond-4-oroo-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "seoul-royal-county", "complex_name": "Seoul Royal County", "zone": "Zaisan Foothills", "title": "Seoul royal county хотхонд 4 өрөө 231мкв орон сууц", "rooms": 4, "area_sqm": 231.0, "floor": 4, "total_floors": 6, "floor_tier": "high", "year_built": 2013, "window_facing": "South, West, East", "faces_south": 1, "faces_west": 1, "parking_status": "included", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "1.15 Тэрбум ₮", "start_price_text": "1,250,000,000 ₮", "start_price_mnt": 1250000000, "total_price_mnt": 1150000000, "price_per_sqm_mnt": 4978355, "price_basis": "total", "seller_cut_pct": 8.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 8.0, "family_score": 6, "duplicate_listing_count": 5, "duplicate_urls": "https://www.unegui.mn/adv/10685878_seoul-royal-county-khotkhond-4-oroo-oron-suuts-khudaldana/ | https://www.unegui.mn/adv/10759146_seoul-royal-county-231mkv-4-uruu/ | https://www.unegui.mn/adv/10759894_zaisand-seoul-royal-country-4-oroo-bair-khudaldana/ | https://www.unegui.mn/adv/10765027_khud-gerlugvista-khotkhond-118-14m2-mastertai-4-oroo-bair-khudaldana/ | https://www.unegui.mn/adv/10775279_seoul-royal-county-d-231mkv-4-oroo-khudaldana/", "unit_fingerprint": "seoul-royal-county|sale|4r|232sqm|f4", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10865610", "url": "https://www.unegui.mn/adv/10865610_khud-hobby-surguuliin-khazhuud-gerlug-vista-khotkhond-118-14mkv-4-oroo/", "deal_type": "sale", "complex_slug": "gerlug-vista", "complex_name": "Gerlug Vista", "zone": "National Park / E-Mart", "title": "Худ, hobby сургуулийн хажууд gerlug vista хотхонд 118,14мкв 4 өрөө байр", "rooms": 4, "area_sqm": 118.0, "floor": 17, "total_floors": 25, "floor_tier": "high", "year_built": 2024, "window_facing": "South, West, East", "faces_south": 1, "faces_west": 1, "parking_status": "included", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.43 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1430000000, "price_per_sqm_mnt": 12118644, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 6, "duplicate_listing_count": 7, "duplicate_urls": "https://www.unegui.mn/adv/10865610_khud-hobby-surguuliin-khazhuud-gerlug-vista-khotkhond-118-14mkv-4-oroo/ | https://www.unegui.mn/adv/10867289_gerlug-vista-khotkhond-4-oroo-bair-khudaldana-gerlug/ | https://www.unegui.mn/adv/10867869_gerlug-vista-khotkhond-4-oroo-bair-khudaldana/ | https://www.unegui.mn/adv/10871996_gerlug-vista-4-oroo/ | https://www.unegui.mn/adv/10872923_gerlug-vista-khotkhond-4-oroo-118mkv/ | https://www.unegui.mn/adv/10872934_khud-18-r-khoroo-gerlug-vista-khotkhond-4-oroo-bair-khudaldana/ | https://www.unegui.mn/adv/10875080_khud-18-khoroo-gerluge-vista-4-oroo-khudaldana/", "unit_fingerprint": "gerlug-vista|sale|4r|118sqm|f17", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10255190", "url": "https://www.unegui.mn/adv/10255190_bella-vista-khotkhond-262mkv-tansag-zeregleliin-pentkhaus-khudaldana/", "deal_type": "sale", "complex_slug": "bella-vista", "complex_name": "Bella Vista", "zone": "Zaisan Foothills", "title": "Bella vista хотхонд 262мкв тансаг зэрэглэлийн пентхаус", "rooms": 5, "area_sqm": 262.0, "floor": 18, "total_floors": 18, "floor_tier": "high", "year_built": 2017, "window_facing": "South, West, North", "faces_south": 1, "faces_west": 1, "parking_status": "included", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "4.9 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 4900000000, "price_per_sqm_mnt": 18702290, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 6, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10255190_bella-vista-khotkhond-262mkv-tansag-zeregleliin-pentkhaus-khudaldana/ | https://www.unegui.mn/adv/10323456_bella-vista-262mk-penthouse-khudaldana/", "unit_fingerprint": "bella-vista|sale|5r|262sqm|f18", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10747251", "url": "https://www.unegui.mn/adv/10747251_bella-vista-4-oroo-bair-kholsluulne/", "deal_type": "rent", "complex_slug": "bella-vista", "complex_name": "Bella Vista", "zone": "Zaisan Foothills", "title": "Зайсан bella vista 4 өрөө байр 142мкв", "rooms": 4, "area_sqm": 142.0, "floor": 18, "total_floors": 18, "floor_tier": "high", "year_built": 2020, "window_facing": "South, North", "faces_south": 1, "faces_west": 0, "parking_status": "included", "payment_terms": "12+1", "furnished": "unfurnished", "raw_price_text": "8 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 8000000, "price_per_sqm_mnt": 56338, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 5, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10747251_bella-vista-4-oroo-bair-kholsluulne/", "unit_fingerprint": "bella-vista|rent|4r|142sqm|f18", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "3 цагийн өмнө"}, {"source": "unegui", "external_id": "10803938", "url": "https://www.unegui.mn/adv/10803938_river-garden-buren-tavilgatai-4-oroo/", "deal_type": "rent", "complex_slug": "river-garden", "complex_name": "River Garden", "zone": "Marshall / Tuul River", "title": "River garden бүрэн тавилгатай 4 өрөө 174мкв", "rooms": 4, "area_sqm": 174.0, "floor": 6, "total_floors": 10, "floor_tier": "high", "year_built": 2017, "window_facing": "South, North", "faces_south": 1, "faces_west": 0, "parking_status": "included", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "8 сая ₮", "start_price_text": "9,500,000 ₮", "start_price_mnt": 9500000, "total_price_mnt": 8000000, "price_per_sqm_mnt": 45977, "price_basis": "monthly", "seller_cut_pct": 15.79, "tracked_drop_pct": 0.0, "effective_drop_pct": 15.79, "family_score": 5, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10803938_river-garden-buren-tavilgatai-4-oroo/", "unit_fingerprint": "river-garden|rent|4r|174sqm|f6", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өнөөдөр"}, {"source": "unegui", "external_id": "10884495", "url": "https://www.unegui.mn/adv/10884495_river-garden-4-oroo-tureesluulene/", "deal_type": "rent", "complex_slug": "river-garden", "complex_name": "River Garden", "zone": "Marshall / Tuul River", "title": "River garden 4 өрөө 174мкв", "rooms": 4, "area_sqm": 174.0, "floor": 7, "total_floors": 12, "floor_tier": "high", "year_built": 2019, "window_facing": "South, North", "faces_south": 1, "faces_west": 0, "parking_status": "included", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "8 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 8000000, "price_per_sqm_mnt": 45977, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 5, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10884495_river-garden-4-oroo-tureesluulene/", "unit_fingerprint": "river-garden|rent|4r|174sqm|f7", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10867558", "url": "https://www.unegui.mn/adv/10867558_marshal-taund-89-9-m2-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "marshall-town", "complex_name": "Marshall Town", "zone": "Marshall / Tuul River", "title": "Маршал таунд 89.9 м² орон сууц 3 өрөө", "rooms": 3, "area_sqm": 89.9, "floor": 6, "total_floors": 6, "floor_tier": "high", "year_built": 2009, "window_facing": "South", "faces_south": 1, "faces_west": 0, "parking_status": "included", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "400 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 400000000, "price_per_sqm_mnt": 4449388, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 5, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10867558_marshal-taund-89-9-m2-oron-suuts-khudaldana/", "unit_fingerprint": "marshall-town|sale|3r|90sqm|f6", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10894952", "url": "https://www.unegui.mn/adv/10894952_vega-city-3-oroo-khudaldana/", "deal_type": "sale", "complex_slug": "vega-city", "complex_name": "Vega City", "zone": "120 Myangat / Orchlon", "title": "Vega city 3 өрөө байр 101.8мкв", "rooms": 3, "area_sqm": 101.8, "floor": 8, "total_floors": 18, "floor_tier": "high", "year_built": 2025, "window_facing": "South, East", "faces_south": 1, "faces_west": 0, "parking_status": "included", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.08 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1080000000, "price_per_sqm_mnt": 10609037, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 5, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10894952_vega-city-3-oroo-khudaldana/", "unit_fingerprint": "vega-city|sale|3r|102sqm|f8", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "5 өдрийн өмнө"}, {"source": "unegui", "external_id": "10895677", "url": "https://www.unegui.mn/adv/10895677_vega-city-3-oroo-bair-zarna/", "deal_type": "sale", "complex_slug": "vega-city", "complex_name": "Vega City", "zone": "120 Myangat / Orchlon", "title": "Vega city 3 өрөө байр 101.8мкв", "rooms": 3, "area_sqm": 101.8, "floor": 15, "total_floors": 16, "floor_tier": "high", "year_built": 2024, "window_facing": "South, East", "faces_south": 1, "faces_west": 0, "parking_status": "included", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "1.09 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1089000000, "price_per_sqm_mnt": 10697446, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 5, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10895677_vega-city-3-oroo-bair-zarna/", "unit_fingerprint": "vega-city|sale|3r|102sqm|f15", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10895245", "url": "https://www.unegui.mn/adv/10895245_vega-city-luxury-khotkhond-3-oroo-khudaldana/", "deal_type": "sale", "complex_slug": "vega-city", "complex_name": "Vega City", "zone": "120 Myangat / Orchlon", "title": "Vega city luxury хотхонд 3 өрөө 101,8мкв", "rooms": 3, "area_sqm": 101.8, "floor": 14, "total_floors": 16, "floor_tier": "high", "year_built": 2024, "window_facing": "South", "faces_south": 1, "faces_west": 0, "parking_status": "included", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "1.1 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1100000000, "price_per_sqm_mnt": 10805501, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 5, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10895245_vega-city-luxury-khotkhond-3-oroo-khudaldana/", "unit_fingerprint": "vega-city|sale|3r|102sqm|f14", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10841139", "url": "https://www.unegui.mn/adv/10841139_gerlug-vista-khotkhond-118-14m2-mash-goio-4-oroo-bair-khudaldana/", "deal_type": "sale", "complex_slug": "gerlug-vista", "complex_name": "Gerlug Vista", "zone": "National Park / E-Mart", "title": "Gerlug vista хотхонд 118,14м2 4 өрөө байр", "rooms": 4, "area_sqm": 118.0, "floor": 12, "total_floors": 23, "floor_tier": "high", "year_built": 2023, "window_facing": "South, West, East", "faces_south": 1, "faces_west": 1, "parking_status": "available", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.43 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1430000000, "price_per_sqm_mnt": 12118644, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 5, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10841139_gerlug-vista-khotkhond-118-14m2-mash-goio-4-oroo-bair-khudaldana/", "unit_fingerprint": "gerlug-vista|sale|4r|118sqm|f12", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 өдрийн өмнө"}, {"source": "unegui", "external_id": "10620409", "url": "https://www.unegui.mn/adv/10620409_khud-gerlug-vista-gerlug-vista-khotkhond-78m-kv-3-oroo-buren-tavilgatai/", "deal_type": "rent", "complex_slug": "gerlug-vista", "complex_name": "Gerlug Vista", "zone": "National Park / E-Mart", "title": "Худ гэрлүг виста gerlug vista хотхонд 78мкв 3 өрөө бүрэн тавилгатай байр", "rooms": 3, "area_sqm": 78.0, "floor": 22, "total_floors": 23, "floor_tier": "high", "year_built": 2025, "window_facing": "South, West", "faces_south": 1, "faces_west": 1, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "4 сая ₮", "start_price_text": "", "start_price_mnt": 4300000, "total_price_mnt": 4000000, "price_per_sqm_mnt": 51282, "price_basis": "monthly", "seller_cut_pct": 6.98, "tracked_drop_pct": 0.0, "effective_drop_pct": 6.98, "family_score": 4, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10620409_khud-gerlug-vista-gerlug-vista-khotkhond-78m-kv-3-oroo-buren-tavilgatai/ | https://www.unegui.mn/adv/10852879_gerlug-vista-izh-buren-tavilgatai-3-oroo-tureesluulne/", "unit_fingerprint": "gerlug-vista|rent|3r|78sqm|f22", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 цагийн өмнө"}, {"source": "unegui", "external_id": "10696780", "url": "https://www.unegui.mn/adv/10696780_time-square-149-mkv-4-oroo/", "deal_type": "rent", "complex_slug": "time-square", "complex_name": "Time Square", "zone": "Marshall / Tuul River", "title": "Time square 149мкв 4 өрөө", "rooms": 4, "area_sqm": 149.0, "floor": 9, "total_floors": 16, "floor_tier": "high", "year_built": 2020, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "included", "payment_terms": "6+1", "furnished": "fully_furnished", "raw_price_text": "5.2 сая ₮", "start_price_text": "6,500,000 ₮", "start_price_mnt": 6500000, "total_price_mnt": 5200000, "price_per_sqm_mnt": 34899, "price_basis": "monthly", "seller_cut_pct": 20.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 20.0, "family_score": 4, "duplicate_listing_count": 3, "duplicate_urls": "https://www.unegui.mn/adv/10682895_time-square-149-mkv-4-oroo-buren-tavilgatai-bair-tureesluulne/ | https://www.unegui.mn/adv/10696780_time-square-149-mkv-4-oroo/ | https://www.unegui.mn/adv/10776745_time-square-khotkhond-4-oroo/", "unit_fingerprint": "time-square|rent|4r|150sqm|f9", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 өдрийн өмнө"}, {"source": "unegui", "external_id": "10908508", "url": "https://www.unegui.mn/adv/10908508_seoul-royal-county-200-mkv-tavilgatai-4-oroo/", "deal_type": "rent", "complex_slug": "seoul-royal-county", "complex_name": "Seoul Royal County", "zone": "Zaisan Foothills", "title": "Seoul royal county 200 мкв тавилгатай 4 өрөө", "rooms": 4, "area_sqm": 200.0, "floor": 5, "total_floors": 6, "floor_tier": "high", "year_built": 2017, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "included", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "5.5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 5500000, "price_per_sqm_mnt": 27500, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 4, "duplicate_listing_count": 6, "duplicate_urls": "https://www.unegui.mn/adv/10888348_zaisan-seoul-royal-county-khotkhond-200mkv-4-oroo/ | https://www.unegui.mn/adv/10889557_seoul-royal-county-khotkhond-200mkv-tavilgatai-4-oroo-bair-kholsluulne/ | https://www.unegui.mn/adv/10893187_khud-seoul-royal-county-200mk-4-oroo/ | https://www.unegui.mn/adv/10906652_seoul-royal-county-khotkhond-200mkv-tavilgatai-4-oroo/ | https://www.unegui.mn/adv/10908508_seoul-royal-county-200-mkv-tavilgatai-4-oroo/ | https://www.unegui.mn/adv/10916503_zaisangiin-seoul-royal-county-tavilgatai-4oroo-bair-200mkv/", "unit_fingerprint": "seoul-royal-county|rent|4r|200sqm|f5", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 цагийн өмнө"}, {"source": "unegui", "external_id": "10883693", "url": "https://www.unegui.mn/adv/10883693_khud-time-square-khotkhond-138mkv-buren-tavilgatai-4oroo-bair-tureesluulne/", "deal_type": "rent", "complex_slug": "time-square", "complex_name": "Time Square", "zone": "Marshall / Tuul River", "title": "Худ, time square хотхонд 138мкв бүрэн тавилгатай 4 өрөө байр", "rooms": 4, "area_sqm": 138.0, "floor": 11, "total_floors": 16, "floor_tier": "high", "year_built": 2015, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "included", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "6 сая ₮", "start_price_text": "7,000,000 ₮", "start_price_mnt": 7000000, "total_price_mnt": 6000000, "price_per_sqm_mnt": 43478, "price_basis": "monthly", "seller_cut_pct": 14.29, "tracked_drop_pct": 0.0, "effective_drop_pct": 14.29, "family_score": 4, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10883693_khud-time-square-khotkhond-138mkv-buren-tavilgatai-4oroo-bair-tureesluulne/ | https://www.unegui.mn/adv/10921155_time-square-khotkhond-138-mkv-buren-tavilgatai-4oroo-bair-tureesluulne/", "unit_fingerprint": "time-square|rent|4r|138sqm|f11", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10812803", "url": "https://www.unegui.mn/adv/10812803_vega-city-khotkhond-tsoo-shine-108-mkv-khagas-tavilgatai-3-oroo/", "deal_type": "rent", "complex_slug": "vega-city", "complex_name": "Vega City", "zone": "120 Myangat / Orchlon", "title": "Vega city хотхонд шинэ 108мкв хагас тавилгатай 3 өрөө байр", "rooms": 3, "area_sqm": 108.0, "floor": 4, "total_floors": 23, "floor_tier": "low", "year_built": 2026, "window_facing": "South", "faces_south": 1, "faces_west": 0, "parking_status": "included", "payment_terms": "3+1", "furnished": "semi_furnished", "raw_price_text": "6 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 6000000, "price_per_sqm_mnt": 55556, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 4, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10812803_vega-city-khotkhond-tsoo-shine-108-mkv-khagas-tavilgatai-3-oroo/", "unit_fingerprint": "vega-city|rent|3r|108sqm|f4", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "3 өдрийн өмнө"}, {"source": "unegui", "external_id": "10622373", "url": "https://www.unegui.mn/adv/10622373_king-tower-khotkhon-5r-eelzhnii-bairand-5-oroo-bair-kholsluulne/", "deal_type": "rent", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "King tower хотхон 5 өрөө байр 154мкв", "rooms": 5, "area_sqm": 154.0, "floor": 11, "total_floors": 16, "floor_tier": "high", "year_built": 2025, "window_facing": "South, West", "faces_south": 1, "faces_west": 1, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "7.5 сая ₮", "start_price_text": "8,000,000 ₮", "start_price_mnt": 8000000, "total_price_mnt": 7500000, "price_per_sqm_mnt": 48701, "price_basis": "monthly", "seller_cut_pct": 6.25, "tracked_drop_pct": 0.0, "effective_drop_pct": 6.25, "family_score": 4, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10622373_king-tower-khotkhon-5r-eelzhnii-bairand-5-oroo-bair-kholsluulne/", "unit_fingerprint": "king-tower|rent|5r|154sqm|f11", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 цагийн өмнө"}, {"source": "unegui", "external_id": "10782450", "url": "https://www.unegui.mn/adv/10782450_zaisand-bella-vista-4-oroo/", "deal_type": "rent", "complex_slug": "bella-vista", "complex_name": "Bella Vista", "zone": "Zaisan Foothills", "title": "Зайсанд bella vista 4 өрөө 142m2", "rooms": 4, "area_sqm": 142.0, "floor": 7, "total_floors": 18, "floor_tier": "mid", "year_built": 2016, "window_facing": "South, North", "faces_south": 1, "faces_west": 0, "parking_status": "included", "payment_terms": "3+1", "furnished": "", "raw_price_text": "7.8 сая ₮", "start_price_text": "8,300,000 ₮", "start_price_mnt": 8300000, "total_price_mnt": 7800000, "price_per_sqm_mnt": 54930, "price_basis": "monthly", "seller_cut_pct": 6.02, "tracked_drop_pct": 0.0, "effective_drop_pct": 6.02, "family_score": 4, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10782450_zaisand-bella-vista-4-oroo/", "unit_fingerprint": "bella-vista|rent|4r|142sqm|f7", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 өдрийн өмнө"}, {"source": "unegui", "external_id": "10722611", "url": "https://www.unegui.mn/adv/10722611_bella-vista-khotkhond-142m2-4-oroo-tureesluulne/", "deal_type": "rent", "complex_slug": "bella-vista", "complex_name": "Bella Vista", "zone": "Zaisan Foothills", "title": "Bella vista хотхонд 142мкв 4 өрөө", "rooms": 4, "area_sqm": 142.0, "floor": 5, "total_floors": 19, "floor_tier": "mid", "year_built": 2000, "window_facing": "South, North", "faces_south": 1, "faces_west": 0, "parking_status": "included", "payment_terms": "3+1", "furnished": "unfurnished", "raw_price_text": "8 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 8000000, "price_per_sqm_mnt": 56338, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 4, "duplicate_listing_count": 3, "duplicate_urls": "https://www.unegui.mn/adv/10722611_bella-vista-khotkhond-142m2-4-oroo-tureesluulne/ | https://www.unegui.mn/adv/10723800_bella-vista-4-oroo-bair-tureesluulne/ | https://www.unegui.mn/adv/10840260_zaisand-bella-vista-khotkhond/", "unit_fingerprint": "bella-vista|rent|4r|142sqm|f5", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10870756", "url": "https://www.unegui.mn/adv/10870756_bella-vista-khotkhond-4-oroo/", "deal_type": "rent", "complex_slug": "bella-vista", "complex_name": "Bella Vista", "zone": "Zaisan Foothills", "title": "Bella vista хотхонд 4 өрөө 142м2", "rooms": 4, "area_sqm": 142.0, "floor": 4, "total_floors": 22, "floor_tier": "low", "year_built": 2015, "window_facing": "South, North", "faces_south": 1, "faces_west": 0, "parking_status": "included", "payment_terms": "3+1", "furnished": "", "raw_price_text": "8.3 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 8300000, "price_per_sqm_mnt": 58451, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 4, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10870756_bella-vista-khotkhond-4-oroo/", "unit_fingerprint": "bella-vista|rent|4r|142sqm|f4", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "3 өдрийн өмнө"}, {"source": "unegui", "external_id": "10905294", "url": "https://www.unegui.mn/adv/10905294_khan-hills-2-khotkhond-4-oroo/", "deal_type": "sale", "complex_slug": "khan-hills", "complex_name": "Khan Hills", "zone": "Marshall / Tuul River", "title": "Khan hills 2 хотхонд 4 өрөө 145мкв", "rooms": 4, "area_sqm": 145.0, "floor": 3, "total_floors": 16, "floor_tier": "low", "year_built": 2026, "window_facing": "South, North", "faces_south": 1, "faces_west": 0, "parking_status": "included", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.19 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1189000000, "price_per_sqm_mnt": 8200000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 4, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10905294_khan-hills-2-khotkhond-4-oroo/", "unit_fingerprint": "khan-hills|sale|4r|146sqm|f3", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "6 өдрийн өмнө"}, {"source": "unegui", "external_id": "10897077", "url": "https://www.unegui.mn/adv/10897077_bella-vista-khotkhond-161mkv-bair-khiamd-khudaldana/", "deal_type": "sale", "complex_slug": "bella-vista", "complex_name": "Bella Vista", "zone": "Zaisan Foothills", "title": "Bella vista хотхонд 161мкв байр 3 өрөө", "rooms": 3, "area_sqm": 161.0, "floor": 1, "total_floors": 8, "floor_tier": "low", "year_built": 2010, "window_facing": "South, East, North", "faces_south": 1, "faces_west": 0, "parking_status": "included", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.3 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1300000000, "price_per_sqm_mnt": 8074534, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 4, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10897077_bella-vista-khotkhond-161mkv-bair-khiamd-khudaldana/", "unit_fingerprint": "bella-vista|sale|3r|162sqm|f1", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10917722", "url": "https://www.unegui.mn/adv/10917722_time-square-khotkhond-5-oroo-super-kharuutstai-khair-khudaldana/", "deal_type": "sale", "complex_slug": "time-square", "complex_name": "Time Square", "zone": "Marshall / Tuul River", "title": "Time square хотхонд 5 өрөө байр 165мкв", "rooms": 5, "area_sqm": 165.0, "floor": 3, "total_floors": 16, "floor_tier": "low", "year_built": 2020, "window_facing": "South", "faces_south": 1, "faces_west": 1, "parking_status": "available", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.32 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1320000000, "price_per_sqm_mnt": 8000000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 4, "duplicate_listing_count": 4, "duplicate_urls": "https://www.unegui.mn/adv/10917722_time-square-khotkhond-5-oroo-super-kharuutstai-khair-khudaldana/ | https://www.unegui.mn/adv/10918725_time-square-khotkhond-5-oroo-oron-suuts-khudaldana/ | https://www.unegui.mn/adv/10919765_time-square-165mkv-5-oroo-zarna/ | https://www.unegui.mn/adv/10920650_time-square-t-5-oroo-bair/", "unit_fingerprint": "time-square|sale|5r|166sqm|f3", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "3 цагийн өмнө"}, {"source": "unegui", "external_id": "10900070", "url": "https://www.unegui.mn/adv/10900070_vega-city-4-uruu-hudaldana/", "deal_type": "sale", "complex_slug": "vega-city", "complex_name": "Vega City", "zone": "120 Myangat / Orchlon", "title": "Vega city 4 uruu 148.8mkv", "rooms": 4, "area_sqm": 148.8, "floor": 14, "total_floors": 23, "floor_tier": "high", "year_built": 2026, "window_facing": "West", "faces_south": 0, "faces_west": 1, "parking_status": "included", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "furnished", "raw_price_text": "1.64 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1637000000, "price_per_sqm_mnt": 11001344, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 4, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10900070_vega-city-4-uruu-hudaldana/", "unit_fingerprint": "vega-city|sale|4r|148sqm|f14", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10651360", "url": "https://www.unegui.mn/adv/10651360_japan-town-d-3-oroo-garazh-khamt/", "deal_type": "rent", "complex_slug": "japan-town", "complex_name": "Japan Town", "zone": "120 Myangat / Ikh Mongol", "title": "Худ japan town-д гаражтай 3 өрөө 77м2", "rooms": 3, "area_sqm": 77.0, "floor": 3, "total_floors": 7, "floor_tier": "mid", "year_built": 2009, "window_facing": "West", "faces_south": 0, "faces_west": 1, "parking_status": "included", "payment_terms": "3+1", "furnished": "semi_furnished", "raw_price_text": "3.3 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 3300000, "price_per_sqm_mnt": 42857, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10651360_japan-town-d-3-oroo-garazh-khamt/ | https://www.unegui.mn/adv/10816327_delgerekh-khotkhond-2-oroo-bair/", "unit_fingerprint": "japan-town|rent|3r|78sqm|f3", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 цагийн өмнө"}, {"source": "unegui", "external_id": "10750657", "url": "https://www.unegui.mn/adv/10750657_alphazone-khotkhond-3oroo/", "deal_type": "rent", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "King tower хотхонд 161мкв 4 өрөө гражтай", "rooms": 4, "area_sqm": 161.0, "floor": 10, "total_floors": 16, "floor_tier": "high", "year_built": 2016, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "3+1", "furnished": "", "raw_price_text": "3.5 сая ₮", "start_price_text": "4,500,000 ₮", "start_price_mnt": 4500000, "total_price_mnt": 3500000, "price_per_sqm_mnt": 21739, "price_basis": "monthly", "seller_cut_pct": 22.22, "tracked_drop_pct": 0.0, "effective_drop_pct": 22.22, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10750657_alphazone-khotkhond-3oroo/", "unit_fingerprint": "king-tower|rent|4r|162sqm|f10", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10895177", "url": "https://www.unegui.mn/adv/10895177_gerlug-vista-khotkhond-3oroo-77mkv/", "deal_type": "rent", "complex_slug": "gerlug-vista", "complex_name": "Gerlug Vista", "zone": "National Park / E-Mart", "title": "Гэрлүг виста хотхонд 3өрөө 77мкв байр", "rooms": 3, "area_sqm": 77.0, "floor": 15, "total_floors": 23, "floor_tier": "high", "year_built": 2022, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "Тохиролцоно", "furnished": "", "raw_price_text": "4 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 4000000, "price_per_sqm_mnt": 51948, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10895177_gerlug-vista-khotkhond-3oroo-77mkv/", "unit_fingerprint": "gerlug-vista|rent|3r|78sqm|f15", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 цагийн өмнө"}, {"source": "unegui", "external_id": "10790690", "url": "https://www.unegui.mn/adv/10790690_vega-city-d-77-7m2-3-oroo-oron-suuts-kholsluulne/", "deal_type": "rent", "complex_slug": "vega-city", "complex_name": "Vega City", "zone": "120 Myangat / Orchlon", "title": "Vega city-д 77.7м² 3 өрөө орон сууц", "rooms": 3, "area_sqm": 77.7, "floor": 16, "total_floors": 3, "floor_tier": "high", "year_built": 2023, "window_facing": "South", "faces_south": 1, "faces_west": 0, "parking_status": "none", "payment_terms": "3+1", "furnished": "", "raw_price_text": "4 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 4000000, "price_per_sqm_mnt": 51480, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10790690_vega-city-d-77-7m2-3-oroo-oron-suuts-kholsluulne/", "unit_fingerprint": "vega-city|rent|3r|78sqm|f16", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өнөөдөр"}, {"source": "unegui", "external_id": "10857259", "url": "https://www.unegui.mn/adv/10857259_khan-hills-buren-tavilgatai-3-oroo-tureesluulne-tokhiroltsono/", "deal_type": "rent", "complex_slug": "khan-hills", "complex_name": "Khan Hills", "zone": "Marshall / Tuul River", "title": "Khan hills бүрэн тавилгатай 3 өрөө 106мкв", "rooms": 3, "area_sqm": 106.0, "floor": 9, "total_floors": 24, "floor_tier": "high", "year_built": 2017, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "4.1 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 4100000, "price_per_sqm_mnt": 38679, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10857259_khan-hills-buren-tavilgatai-3-oroo-tureesluulne-tokhiroltsono/", "unit_fingerprint": "khan-hills|rent|3r|106sqm|f9", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "3 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10882578", "url": "https://www.unegui.mn/adv/10882578_khud-17-khoroo-khan-khills-khotkhond-140-mkv-4-oroo-oron-suuts-kholsluulne/", "deal_type": "rent", "complex_slug": "khan-hills", "complex_name": "Khan Hills", "zone": "Marshall / Tuul River", "title": "Худ 17 хороо, khan khills хотхонд 140 мкв 4 өрөө орон сууц", "rooms": 4, "area_sqm": 140.0, "floor": 8, "total_floors": 14, "floor_tier": "high", "year_built": 2015, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "available", "payment_terms": "3+1", "furnished": "", "raw_price_text": "5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 5000000, "price_per_sqm_mnt": 35714, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10882578_khud-17-khoroo-khan-khills-khotkhond-140-mkv-4-oroo-oron-suuts-kholsluulne/", "unit_fingerprint": "khan-hills|rent|4r|140sqm|f8", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10731906", "url": "https://www.unegui.mn/adv/10731906_king-tower-khotkhond-3-oroo-145-mkv/", "deal_type": "rent", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "King tower хотхонд 3 өрөө 145мкв", "rooms": 3, "area_sqm": 145.0, "floor": 11, "total_floors": 16, "floor_tier": "high", "year_built": 2021, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "3+1", "furnished": "", "raw_price_text": "5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 5000000, "price_per_sqm_mnt": 34483, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10731906_king-tower-khotkhond-3-oroo-145-mkv/", "unit_fingerprint": "king-tower|rent|3r|146sqm|f11", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 өдрийн өмнө"}, {"source": "unegui", "external_id": "10895187", "url": "https://www.unegui.mn/adv/10895187_zaisan-buddha-vista-4-oroo/", "deal_type": "rent", "complex_slug": "buddha-vista", "complex_name": "Buddha Vista", "zone": "Zaisan Foothills", "title": "Зайсан buddha vista 4 өрөө байр 122мкв", "rooms": 4, "area_sqm": 122.0, "floor": 5, "total_floors": 18, "floor_tier": "mid", "year_built": 2014, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "included", "payment_terms": "3+1", "furnished": "", "raw_price_text": "6 сая ₮", "start_price_text": "", "start_price_mnt": 6500000, "total_price_mnt": 6000000, "price_per_sqm_mnt": 49180, "price_basis": "monthly", "seller_cut_pct": 7.69, "tracked_drop_pct": 0.0, "effective_drop_pct": 7.69, "family_score": 3, "duplicate_listing_count": 6, "duplicate_urls": "https://www.unegui.mn/adv/10880285_budda-vista-4-oroo-zogsooltoi-buddha-vista-3bd-apt-with-parking/ | https://www.unegui.mn/adv/10889211_zaisan-buddha-vista-khotkhond-buren-tavilgatai-4-oroo-oron-suuts/ | https://www.unegui.mn/adv/10895187_zaisan-buddha-vista-4-oroo/ | https://www.unegui.mn/adv/10917027_buddha-vista-residence-d-4-oroo-bair-tureesluulne/ | https://www.unegui.mn/adv/10919029_buddha-vista-residence-d-122mkv-4-oroo-oron-suuts/ | https://www.unegui.mn/adv/10919842_zaisan-buddha-vista-residence-d-4-oroo-oron-suuts-kholsluulne/", "unit_fingerprint": "buddha-vista|rent|4r|122sqm|f5", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 цагийн өмнө"}, {"source": "unegui", "external_id": "10796293", "url": "https://www.unegui.mn/adv/10796293_khud-king-tauert-165mkv-4-oroo-oron-suuts-kholsluulne/", "deal_type": "rent", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "Худ, кинг тауэрт 165мкв 4 өрөө орон сууц", "rooms": 4, "area_sqm": 165.0, "floor": 11, "total_floors": 17, "floor_tier": "high", "year_built": 2021, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "3+1", "furnished": "", "raw_price_text": "6 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 6000000, "price_per_sqm_mnt": 36364, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10796293_khud-king-tauert-165mkv-4-oroo-oron-suuts-kholsluulne/", "unit_fingerprint": "king-tower|rent|4r|166sqm|f11", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10899156", "url": "https://www.unegui.mn/adv/10899156_bella-vista-4-oroo/", "deal_type": "rent", "complex_slug": "bella-vista", "complex_name": "Bella Vista", "zone": "Zaisan Foothills", "title": "Белла виста 4 өрөө 142мкв", "rooms": 4, "area_sqm": 142.0, "floor": 9, "total_floors": 18, "floor_tier": "high", "year_built": 2015, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "8.8 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 8800000, "price_per_sqm_mnt": 61972, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10899156_bella-vista-4-oroo/", "unit_fingerprint": "bella-vista|rent|4r|142sqm|f9", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10913931", "url": "https://www.unegui.mn/adv/10913931_river-garden-1-t-5-oroo/", "deal_type": "rent", "complex_slug": "river-garden", "complex_name": "River Garden", "zone": "Marshall / Tuul River", "title": "River garden 1 т 5 өрөө 200мкв", "rooms": 5, "area_sqm": 200.0, "floor": 7, "total_floors": 7, "floor_tier": "high", "year_built": 2017, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "3+1", "furnished": "", "raw_price_text": "11 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 11000000, "price_per_sqm_mnt": 55000, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10913931_river-garden-1-t-5-oroo/", "unit_fingerprint": "river-garden|rent|5r|200sqm|f7", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "3 өдрийн өмнө"}, {"source": "unegui", "external_id": "10917792", "url": "https://www.unegui.mn/adv/10917792_king-tower-93mkv-3-oroo-bair/", "deal_type": "sale", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "King tower 93мкв 3 өрөө байр", "rooms": 3, "area_sqm": 93.0, "floor": 14, "total_floors": 16, "floor_tier": "high", "year_built": 2020, "window_facing": "South", "faces_south": 1, "faces_west": 0, "parking_status": "none", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "470 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 470000000, "price_per_sqm_mnt": 5053763, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10848004_king-taur-khotkhony-2-r-eelzhind-shalnaas-taaz-tsonkhtoi-mastertai-3oroo-bair-khudaldan/ | https://www.unegui.mn/adv/10917792_king-tower-93mkv-3-oroo-bair/", "unit_fingerprint": "king-tower|sale|3r|94sqm|f14", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10813314", "url": "https://www.unegui.mn/adv/10813314_king-tovert-3-oroo-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "Кинг товерт 3 өрөө орон сууц 97мкв", "rooms": 3, "area_sqm": 97.0, "floor": 4, "total_floors": 16, "floor_tier": "low", "year_built": 2026, "window_facing": "West, North", "faces_south": 0, "faces_west": 1, "parking_status": "included", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "688 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 688000000, "price_per_sqm_mnt": 7092784, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10813314_king-tovert-3-oroo-oron-suuts-khudaldana/", "unit_fingerprint": "king-tower|sale|3r|98sqm|f4", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 өдрийн өмнө"}, {"source": "unegui", "external_id": "10921731", "url": "https://www.unegui.mn/adv/10921731_japan-town-c1-khotkhond-100-mkv-3-oroo-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "japan-town", "complex_name": "Japan Town", "zone": "120 Myangat / Ikh Mongol", "title": "Japan Town C1 хотхонд 100мкв 3 өрөө орон сууц", "rooms": 3, "area_sqm": 100.0, "floor": 2, "total_floors": 7, "floor_tier": "low", "year_built": 2015, "window_facing": "West", "faces_south": 0, "faces_west": 1, "parking_status": "included", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "690 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 690000000, "price_per_sqm_mnt": 6900000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10728924_khud-15-r-khoroo-japan-town-d-4-oroo-zogsoolyn-khamt-khudaldana/ | https://www.unegui.mn/adv/10921731_japan-town-c1-khotkhond-100-mkv-3-oroo-oron-suuts-khudaldana/", "unit_fingerprint": "japan-town|sale|3r|100sqm|f2", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "53 минутын өмнө"}, {"source": "unegui", "external_id": "10918159", "url": "https://www.unegui.mn/adv/10918159_river-garen-2t-72-69mkv-3n-oroo-khudaldana/", "deal_type": "sale", "complex_slug": "river-garden", "complex_name": "River Garden", "zone": "Marshall / Tuul River", "title": "Ривэр гарен 2т 72.69мкв 3н өрөө", "rooms": 3, "area_sqm": 72.7, "floor": 6, "total_floors": 14, "floor_tier": "mid", "year_built": 2024, "window_facing": "West, North", "faces_south": 0, "faces_west": 1, "parking_status": "included", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "735 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 735000000, "price_per_sqm_mnt": 10110041, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10918159_river-garen-2t-72-69mkv-3n-oroo-khudaldana/", "unit_fingerprint": "river-garden|sale|3r|72sqm|f6", "first_seen_at": "2026-11-24T05:08:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10854751", "url": "https://www.unegui.mn/adv/10854751_khan-hills-140-7-m2-4-oroo-bair-khan-khills/", "deal_type": "sale", "complex_slug": "khan-hills", "complex_name": "Khan Hills", "zone": "Marshall / Tuul River", "title": "Худ khan hills 140.7м2 4 өрөө байр", "rooms": 4, "area_sqm": 140.7, "floor": 12, "total_floors": 14, "floor_tier": "high", "year_built": 2021, "window_facing": "South, North", "faces_south": 1, "faces_west": 0, "parking_status": "none", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "930 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 930000000, "price_per_sqm_mnt": 6609808, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10854751_khan-hills-140-7-m2-4-oroo-bair-khan-khills/ | https://www.unegui.mn/adv/10854986_khan-khills-4-oroo-zasvar-khiisen-bair-zarna/", "unit_fingerprint": "khan-hills|sale|4r|140sqm|f12", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10867863", "url": "https://www.unegui.mn/adv/10867863_japan-town-c1-blokt-110m2-4-oroo-khudaldana/", "deal_type": "sale", "complex_slug": "japan-town", "complex_name": "Japan Town", "zone": "120 Myangat / Ikh Mongol", "title": "Japan town c1 блокт 110м2 4 өрөө", "rooms": 4, "area_sqm": 110.0, "floor": 4, "total_floors": 7, "floor_tier": "high", "year_built": 2011, "window_facing": "South", "faces_south": 1, "faces_west": 0, "parking_status": "none", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "935 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 935000000, "price_per_sqm_mnt": 8500000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10867863_japan-town-c1-blokt-110m2-4-oroo-khudaldana/", "unit_fingerprint": "japan-town|sale|4r|110sqm|f4", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 цагийн өмнө"}, {"source": "unegui", "external_id": "10895447", "url": "https://www.unegui.mn/adv/10895447_khan-hills-2-khotkhond-3-oroo-136-8mkv-bair-zarna/", "deal_type": "sale", "complex_slug": "khan-hills", "complex_name": "Khan Hills", "zone": "Marshall / Tuul River", "title": "Khan hills 2 хотхонд 3 өрөө 136.8мкв байр", "rooms": 3, "area_sqm": 136.8, "floor": 1, "total_floors": 12, "floor_tier": "low", "year_built": 2025, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "included", "payment_terms": "Бартер сонирхоно", "furnished": "", "raw_price_text": "985 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 985000000, "price_per_sqm_mnt": 7200292, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10874018_khan-hills-khan-khills-2-3-oroo-136-8mkv-master-untlagatai-shine/ | https://www.unegui.mn/adv/10895447_khan-hills-2-khotkhond-3-oroo-136-8mkv-bair-zarna/", "unit_fingerprint": "khan-hills|sale|3r|136sqm|f1", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10876820", "url": "https://www.unegui.mn/adv/10876820_khud-khan-khills-khotkhon-4-oroo/", "deal_type": "sale", "complex_slug": "khan-hills", "complex_name": "Khan Hills", "zone": "Marshall / Tuul River", "title": "Худ хан хиллс хотхон 4 өрөө", "rooms": 4, "area_sqm": 153.3, "floor": 6, "total_floors": 12, "floor_tier": "mid", "year_built": 2026, "window_facing": "South, West, North", "faces_south": 1, "faces_west": 1, "parking_status": "none", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "1.2 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1195740000, "price_per_sqm_mnt": 7800000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10876820_khud-khan-khills-khotkhon-4-oroo/", "unit_fingerprint": "khan-hills|sale|4r|154sqm|f6", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10918526", "url": "https://www.unegui.mn/adv/10918526_jardin-luxury-residence-4-oroo/", "deal_type": "sale", "complex_slug": "jardin", "complex_name": "Jardin Residence", "zone": "Zaisan Foothills", "title": "Jardin Luxury Residence 4 өрөө", "rooms": 4, "area_sqm": 188.0, "floor": 1, "total_floors": 6, "floor_tier": "low", "year_built": 2017, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "included", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "1.2 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1200000000, "price_per_sqm_mnt": 6382979, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10895439_jardin-residence-khotkhond-4-oroo-188mkv-bair-zarna/ | https://www.unegui.mn/adv/10918526_jardin-luxury-residence-4-oroo/", "unit_fingerprint": "jardin|sale|4r|188sqm|f1", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10856335", "url": "https://www.unegui.mn/adv/10856335_bella-vista-161mkv-bair/", "deal_type": "sale", "complex_slug": "bella-vista", "complex_name": "Bella Vista", "zone": "Zaisan Foothills", "title": "Bella vista 5 өрөө 161мкв байр", "rooms": 5, "area_sqm": 161.0, "floor": 1, "total_floors": 12, "floor_tier": "low", "year_built": 2016, "window_facing": "South, East, North", "faces_south": 1, "faces_west": 0, "parking_status": "available", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.3 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1300000000, "price_per_sqm_mnt": 8074534, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10856335_bella-vista-161mkv-bair/", "unit_fingerprint": "bella-vista|sale|5r|162sqm|f1", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "6 өдрийн өмнө"}, {"source": "unegui", "external_id": "10885629", "url": "https://www.unegui.mn/adv/10885629_jardin-residence-khotkhond-terrastai-4-oroo-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "jardin", "complex_name": "Jardin Residence", "zone": "Zaisan Foothills", "title": "Jardin residence хотхонд 4 өрөө орон сууц 204.77мкв", "rooms": 4, "area_sqm": 204.77, "floor": 1, "total_floors": 6, "floor_tier": "low", "year_built": 2022, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "included", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.33 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1331000000, "price_per_sqm_mnt": 6499976, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10789940_jardin-residence-4-oroo/ | https://www.unegui.mn/adv/10885629_jardin-residence-khotkhond-terrastai-4-oroo-oron-suuts-khudaldana/", "unit_fingerprint": "jardin|sale|4r|204sqm|f1", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өнөөдөр"}, {"source": "unegui", "external_id": "10795867", "url": "https://www.unegui.mn/adv/10795867_budda-vista-khotkhond-5-oroo-236mkv-dupleks-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "buddha-vista", "complex_name": "Buddha Vista", "zone": "Zaisan Foothills", "title": "Будда виста хотхонд 5 өрөө 236мкв дуплекс орон сууц", "rooms": 5, "area_sqm": 236.0, "floor": 11, "total_floors": 18, "floor_tier": "high", "year_built": 2012, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.35 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1350000000, "price_per_sqm_mnt": 5720339, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10632136_zaisan-buddha-vista-khotkhond-5-oroo-236mkv-dupleks-oron-suuts/ | https://www.unegui.mn/adv/10795867_budda-vista-khotkhond-5-oroo-236mkv-dupleks-oron-suuts-khudaldana/", "unit_fingerprint": "buddha-vista|sale|5r|236sqm|f11", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "6 өдрийн өмнө"}, {"source": "unegui", "external_id": "10591547", "url": "https://www.unegui.mn/adv/10591547_budda-vista-khotkhond-236mkv-dupleks-5-oroo-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "buddha-vista", "complex_name": "Buddha Vista", "zone": "Zaisan Foothills", "title": "Худ будда виста хотхонд 236мкв дуплекс 5 өрөө орон сууц", "rooms": 5, "area_sqm": 236.0, "floor": 18, "total_floors": 18, "floor_tier": "high", "year_built": 2017, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.35 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1350000000, "price_per_sqm_mnt": 5720339, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10591547_budda-vista-khotkhond-236mkv-dupleks-5-oroo-oron-suuts-khudaldana/", "unit_fingerprint": "buddha-vista|sale|5r|236sqm|f18", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 өдрийн өмнө"}, {"source": "unegui", "external_id": "10822910", "url": "https://www.unegui.mn/adv/10822910_zaisan-seoul-royal-county-4-oroo-bair-khudaldana/", "deal_type": "sale", "complex_slug": "seoul-royal-county", "complex_name": "Seoul Royal County", "zone": "Zaisan Foothills", "title": "Зайсан, seoul royal county 4 өрөө 231мкв", "rooms": 4, "area_sqm": 231.0, "floor": 3, "total_floors": 6, "floor_tier": "mid", "year_built": 2020, "window_facing": "West, East, North", "faces_south": 0, "faces_west": 1, "parking_status": "included", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.55 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1550000000, "price_per_sqm_mnt": 6709957, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10822910_zaisan-seoul-royal-county-4-oroo-bair-khudaldana/", "unit_fingerprint": "seoul-royal-county|sale|4r|232sqm|f3", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 цагийн өмнө"}, {"source": "unegui", "external_id": "10871772", "url": "https://www.unegui.mn/adv/10871772_bella-vista-residence-khotkhond-262-m2-pentkhaus/", "deal_type": "sale", "complex_slug": "bella-vista", "complex_name": "Bella Vista", "zone": "Zaisan Foothills", "title": "Bella vista residence хотхонд 262 м² пентхаус", "rooms": 5, "area_sqm": 262.0, "floor": 25, "total_floors": 25, "floor_tier": "high", "year_built": 2013, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "4.9 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 4900000000, "price_per_sqm_mnt": 18702290, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 3, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10871772_bella-vista-residence-khotkhond-262-m2-pentkhaus/", "unit_fingerprint": "bella-vista|sale|5r|262sqm|f25", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10867889", "url": "https://www.unegui.mn/adv/10867889_king-tower-khotkhond-buren-tavilgatai-3-oroo-bair/", "deal_type": "rent", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "King tower хотхонд бүрэн тавилгатай 3 өрөө байр 79мкв", "rooms": 3, "area_sqm": 79.0, "floor": 10, "total_floors": 16, "floor_tier": "high", "year_built": 2017, "window_facing": "West, North", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "Тохиролцоно", "furnished": "fully_furnished", "raw_price_text": "3.5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 3500000, "price_per_sqm_mnt": 44304, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10867889_king-tower-khotkhond-buren-tavilgatai-3-oroo-bair/", "unit_fingerprint": "king-tower|rent|3r|80sqm|f10", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өнөөдөр"}, {"source": "unegui", "external_id": "10919801", "url": "https://www.unegui.mn/adv/10919801_khud-gerlug-khotkhond-3oroo-78mkv-bair/", "deal_type": "rent", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "Худ гэрлүг хотхонд 3өрөө 78мкв байр", "rooms": 3, "area_sqm": 78.0, "floor": 15, "total_floors": 24, "floor_tier": "high", "year_built": 2022, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "available", "payment_terms": "3+1", "furnished": "furnished", "raw_price_text": "3.6 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 3600000, "price_per_sqm_mnt": 46154, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10919801_khud-gerlug-khotkhond-3oroo-78mkv-bair/", "unit_fingerprint": "king-tower|rent|3r|78sqm|f15", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10871844", "url": "https://www.unegui.mn/adv/10871844_iapon-taun-khotkhond-buren-tavilgatai-3-oroo-bair-tureesluulne/", "deal_type": "rent", "complex_slug": "japan-town", "complex_name": "Japan Town", "zone": "120 Myangat / Ikh Mongol", "title": "Япон таун -хотхонд бүрэн тавилгатай 3 өрөө байр 79,97м2", "rooms": 3, "area_sqm": 79.97, "floor": 6, "total_floors": 7, "floor_tier": "high", "year_built": 2020, "window_facing": "West", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "4 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 4000000, "price_per_sqm_mnt": 50019, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10853427_khud-18-r-khoroo-japan-town-3-oroo-79-97m2/ | https://www.unegui.mn/adv/10871844_iapon-taun-khotkhond-buren-tavilgatai-3-oroo-bair-tureesluulne/", "unit_fingerprint": "japan-town|rent|3r|80sqm|f6", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "4 өдрийн өмнө"}, {"source": "unegui", "external_id": "10857620", "url": "https://www.unegui.mn/adv/10857620_marshal-taund-4-oroo-bair-kholsluulne/", "deal_type": "rent", "complex_slug": "marshall-town", "complex_name": "Marshall Town", "zone": "Marshall / Tuul River", "title": "Маршал таунд 4 өрөө байр 180мкв", "rooms": 4, "area_sqm": 180.0, "floor": 2, "total_floors": 6, "floor_tier": "low", "year_built": 2012, "window_facing": "South, North", "faces_south": 1, "faces_west": 0, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "4 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 4000000, "price_per_sqm_mnt": 22222, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10857620_marshal-taund-4-oroo-bair-kholsluulne/", "unit_fingerprint": "marshall-town|rent|4r|180sqm|f2", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10887409", "url": "https://www.unegui.mn/adv/10887409_khan-uul-tokio-taun1-t-3-oroo-bair/", "deal_type": "rent", "complex_slug": "japan-town", "complex_name": "Japan Town", "zone": "120 Myangat / Ikh Mongol", "title": "Хан-уул, токио таун1 т 3 өрөө байр 103.5m2", "rooms": 3, "area_sqm": 103.5, "floor": 2, "total_floors": 15, "floor_tier": "low", "year_built": 2026, "window_facing": "South, East, North", "faces_south": 1, "faces_west": 0, "parking_status": "none", "payment_terms": "2+1", "furnished": "fully_furnished", "raw_price_text": "4.3 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 4300000, "price_per_sqm_mnt": 41546, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10887409_khan-uul-tokio-taun1-t-3-oroo-bair/", "unit_fingerprint": "japan-town|rent|3r|104sqm|f2", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10920914", "url": "https://www.unegui.mn/adv/10920914_khud-18-r-khoroo-gerlug-vista-khotkhond-78mkv-3-oroo-oron-suuts-tureesluulne/", "deal_type": "rent", "complex_slug": "gerlug-vista", "complex_name": "Gerlug Vista", "zone": "National Park / E-Mart", "title": "Худ, 18-р хороо гэрлүг виста хотхонд 78мкв 3 өрөө орон сууц", "rooms": 3, "area_sqm": 78.0, "floor": 5, "total_floors": 25, "floor_tier": "low", "year_built": 2024, "window_facing": "South, East", "faces_south": 1, "faces_west": 0, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "4.8 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 4800000, "price_per_sqm_mnt": 61538, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 4, "duplicate_urls": "https://www.unegui.mn/adv/10867214_khan-uul-imart-urd-gerlug-vista/ | https://www.unegui.mn/adv/10907028_khud-18-r-khoroo-gerlug-vista-khotkhond-78m2-mastertai-buren-tavilgatai-3-oroo/ | https://www.unegui.mn/adv/10920914_khud-18-r-khoroo-gerlug-vista-khotkhond-78mkv-3-oroo-oron-suuts-tureesluulne/ | https://www.unegui.mn/adv/10921539_khud-18-r-khoroo-gerlug-vista-khotkhond-78mkv-3-oroo-oron-suuts-tureesluulne/", "unit_fingerprint": "gerlug-vista|rent|3r|78sqm|f5", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өнөөдөр"}, {"source": "unegui", "external_id": "10888562", "url": "https://www.unegui.mn/adv/10888562_khan-hills-khotkhond-140mkv-4-oroo-bair-tureesed/", "deal_type": "rent", "complex_slug": "khan-hills", "complex_name": "Khan Hills", "zone": "Marshall / Tuul River", "title": "Khan hills хотхонд 140мкв 4 өрөө байр", "rooms": 4, "area_sqm": 140.0, "floor": 9, "total_floors": 14, "floor_tier": "high", "year_built": 2018, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 5000000, "price_per_sqm_mnt": 35714, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10888562_khan-hills-khotkhond-140mkv-4-oroo-bair-tureesed/", "unit_fingerprint": "khan-hills|rent|4r|140sqm|f9", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10824667", "url": "https://www.unegui.mn/adv/10824667_time-square-khotkhond-149-mkv-4-oroo-bair-tureesluulne/", "deal_type": "rent", "complex_slug": "time-square", "complex_name": "Time Square", "zone": "Marshall / Tuul River", "title": "Time square хотхонд 149 мкв 4 өрөө байр", "rooms": 4, "area_sqm": 149.0, "floor": 14, "total_floors": 9, "floor_tier": "high", "year_built": 2021, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "5.2 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 5200000, "price_per_sqm_mnt": 34899, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10824667_time-square-khotkhond-149-mkv-4-oroo-bair-tureesluulne/", "unit_fingerprint": "time-square|rent|4r|150sqm|f14", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10891922", "url": "https://www.unegui.mn/adv/10891922_seoul-royal-county-5-oroo-bair/", "deal_type": "rent", "complex_slug": "seoul-royal-county", "complex_name": "Seoul Royal County", "zone": "Zaisan Foothills", "title": "Seoul royal county 5 өрөө байр 200мкв", "rooms": 5, "area_sqm": 200.0, "floor": 5, "total_floors": 6, "floor_tier": "high", "year_built": 2015, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "5.5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 5500000, "price_per_sqm_mnt": 27500, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10891922_seoul-royal-county-5-oroo-bair/", "unit_fingerprint": "seoul-royal-county|rent|5r|200sqm|f5", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "4 өдрийн өмнө"}, {"source": "unegui", "external_id": "10901062", "url": "https://www.unegui.mn/adv/10901062_time-square-khotkhond-4-oroo-oron-suuts-tureesluulne/", "deal_type": "rent", "complex_slug": "time-square", "complex_name": "Time Square", "zone": "Marshall / Tuul River", "title": "Time square хотхонд 4 өрөө орон сууц 139мкв", "rooms": 4, "area_sqm": 139.0, "floor": 11, "total_floors": 16, "floor_tier": "high", "year_built": 2018, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "6 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 6000000, "price_per_sqm_mnt": 43165, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10901062_time-square-khotkhond-4-oroo-oron-suuts-tureesluulne/ | https://www.unegui.mn/adv/10921049_time-square-4-oroo-bair/", "unit_fingerprint": "time-square|rent|4r|140sqm|f11", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10915992", "url": "https://www.unegui.mn/adv/10915992_budda-vista-khotkhond-122m2-4-oroo-oron-suuts/", "deal_type": "rent", "complex_slug": "buddha-vista", "complex_name": "Buddha Vista", "zone": "Zaisan Foothills", "title": "Будда виста хотхонд 122м2 4 өрөө орон сууц", "rooms": 4, "area_sqm": 122.0, "floor": 6, "total_floors": 16, "floor_tier": "mid", "year_built": 2017, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "6.5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 6500000, "price_per_sqm_mnt": 53279, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10915992_budda-vista-khotkhond-122m2-4-oroo-oron-suuts/", "unit_fingerprint": "buddha-vista|rent|4r|122sqm|f6", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10875745", "url": "https://www.unegui.mn/adv/10875745_river-garden-2-khotkhon-113-5m-kv-4-oroo-buren-tavilgatai-bair-tureesluulne/", "deal_type": "rent", "complex_slug": "river-garden", "complex_name": "River Garden", "zone": "Marshall / Tuul River", "title": "River garden-2 хотхон 113,5мкв 4 өрөө байр", "rooms": 4, "area_sqm": 113.0, "floor": 4, "total_floors": 7, "floor_tier": "high", "year_built": 2021, "window_facing": "West, North", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "6.5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 6500000, "price_per_sqm_mnt": 57522, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10875745_river-garden-2-khotkhon-113-5m-kv-4-oroo-buren-tavilgatai-bair-tureesluulne/", "unit_fingerprint": "river-garden|rent|4r|114sqm|f4", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10894902", "url": "https://www.unegui.mn/adv/10894902_jardin-residence-khotkhon-4-oroo-190mkv-bair/", "deal_type": "rent", "complex_slug": "jardin", "complex_name": "Jardin Residence", "zone": "Zaisan Foothills", "title": "Jardin residence хотхон 4 өрөө 190мкв байр", "rooms": 4, "area_sqm": 190.0, "floor": 3, "total_floors": 6, "floor_tier": "mid", "year_built": 2022, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "3+1", "furnished": "", "raw_price_text": "7 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 7000000, "price_per_sqm_mnt": 36842, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 3, "duplicate_urls": "https://www.unegui.mn/adv/10894902_jardin-residence-khotkhon-4-oroo-190mkv-bair/ | https://www.unegui.mn/adv/10909492_jardin-residence-4-oroo-oron-suuts-kholsluulne/ | https://www.unegui.mn/adv/10911756_jardin-residence-d-4-oroo-tureesluulne/", "unit_fingerprint": "jardin|rent|4r|190sqm|f3", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10755297", "url": "https://www.unegui.mn/adv/10755297_khan-hills-residence-110m2-3-oroo/", "deal_type": "sale", "complex_slug": "khan-hills", "complex_name": "Khan Hills", "zone": "Marshall / Tuul River", "title": "Khan hills residence 110м2 3 өрөө", "rooms": 3, "area_sqm": 110.0, "floor": 1, "total_floors": 14, "floor_tier": "low", "year_built": 2020, "window_facing": "South", "faces_south": 1, "faces_west": 0, "parking_status": "none", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "715 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 715000000, "price_per_sqm_mnt": 6500000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10755297_khan-hills-residence-110m2-3-oroo/", "unit_fingerprint": "khan-hills|sale|3r|110sqm|f1", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 өдрийн өмнө"}, {"source": "unegui", "external_id": "10882564", "url": "https://www.unegui.mn/adv/10882564_khud-17-khoroo-river-garden-2-khotkhond-72-69-mkv-3-oroo-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "river-garden", "complex_name": "River Garden", "zone": "Marshall / Tuul River", "title": "Худ 17 хороо, river garden 2 хотхонд 72.69 мкв 3 өрөө орон сууц", "rooms": 3, "area_sqm": 72.69, "floor": 8, "total_floors": 15, "floor_tier": "high", "year_built": 2023, "window_facing": "West, North", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "740 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 740000000, "price_per_sqm_mnt": 10180217, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10882564_khud-17-khoroo-river-garden-2-khotkhond-72-69-mkv-3-oroo-oron-suuts-khudaldana/ | https://www.unegui.mn/adv/10900183_khan-uul-17-r-khoroo-river-garden-2-khotkhond-72-69-m2-3-oroo/", "unit_fingerprint": "river-garden|sale|3r|72sqm|f8", "first_seen_at": "2026-11-24T05:08:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "4 өдрийн өмнө"}, {"source": "unegui", "external_id": "10919846", "url": "https://www.unegui.mn/adv/10919846_king-tower-129mkv-4-oroo-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "King tower 129мкв 4 өрөө орон сууц", "rooms": 4, "area_sqm": 129.0, "floor": 7, "total_floors": 16, "floor_tier": "mid", "year_built": 2026, "window_facing": "East", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "928.8 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 928800000, "price_per_sqm_mnt": 7200000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10919846_king-tower-129mkv-4-oroo-oron-suuts-khudaldana/", "unit_fingerprint": "king-tower|sale|4r|130sqm|f7", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 цагийн өмнө"}, {"source": "unegui", "external_id": "10811669", "url": "https://www.unegui.mn/adv/10811669_zaisan-jardin-khotkhon-4-oroo/", "deal_type": "sale", "complex_slug": "jardin", "complex_name": "Jardin Residence", "zone": "Zaisan Foothills", "title": "Зайсан jardin хотхон 4 өрөө 189.44мкв", "rooms": 4, "area_sqm": 189.44, "floor": 2, "total_floors": 6, "floor_tier": "low", "year_built": 2017, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "available", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.05 Тэрбум ₮", "start_price_text": "", "start_price_mnt": 1120000000, "total_price_mnt": 1050000000, "price_per_sqm_mnt": 5542652, "price_basis": "total", "seller_cut_pct": 6.25, "tracked_drop_pct": 0.0, "effective_drop_pct": 6.25, "family_score": 2, "duplicate_listing_count": 3, "duplicate_urls": "https://www.unegui.mn/adv/10714503_khud-zaisan-jardin-residence-khotkhond-189-44mkv-4-oroo-oron-suuts-khudaldana/ | https://www.unegui.mn/adv/10811669_zaisan-jardin-khotkhon-4-oroo/ | https://www.unegui.mn/adv/10885522_jardin-residence-khotkhond-4-oroo-oron-suuts-khudaldana/", "unit_fingerprint": "jardin|sale|4r|190sqm|f2", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10884948", "url": "https://www.unegui.mn/adv/10884948_japan-town-c3-3-oroo-khudaldana/", "deal_type": "sale", "complex_slug": "japan-town", "complex_name": "Japan Town", "zone": "120 Myangat / Ikh Mongol", "title": "Japan town c3 ,3 өрөө 99,88мкв", "rooms": 3, "area_sqm": 99.88, "floor": 5, "total_floors": 7, "floor_tier": "high", "year_built": 2012, "window_facing": "West", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "1.08 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1078704000, "price_per_sqm_mnt": 10800000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10884948_japan-town-c3-3-oroo-khudaldana/ | https://www.unegui.mn/adv/10885915_japan-town-c3-3oroo/", "unit_fingerprint": "japan-town|sale|3r|100sqm|f5", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өнөөдөр"}, {"source": "unegui", "external_id": "10875504", "url": "https://www.unegui.mn/adv/10875504_seoul-royal-county-khotkhond-200-m2-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "seoul-royal-county", "complex_name": "Seoul Royal County", "zone": "Zaisan Foothills", "title": "Seoul royal county хотхонд 200 мкв 4 өрөө орон сууц", "rooms": 4, "area_sqm": 200.0, "floor": 3, "total_floors": 6, "floor_tier": "mid", "year_built": 2011, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.1 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1100000000, "price_per_sqm_mnt": 5500000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10875504_seoul-royal-county-khotkhond-200-m2-oron-suuts-khudaldana/", "unit_fingerprint": "seoul-royal-county|sale|4r|200sqm|f3", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10848417", "url": "https://www.unegui.mn/adv/10848417_river-garden-2-khotkhond-120-mkv-4-oroo-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "river-garden", "complex_name": "River Garden", "zone": "Marshall / Tuul River", "title": "River garden-2 хотхонд 120 мкв 4 өрөө орон сууц", "rooms": 4, "area_sqm": 120.0, "floor": 13, "total_floors": 16, "floor_tier": "high", "year_built": 2018, "window_facing": "East, North", "faces_south": 0, "faces_west": 0, "parking_status": "available", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.11 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1115000000, "price_per_sqm_mnt": 9291667, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10848417_river-garden-2-khotkhond-120-mkv-4-oroo-oron-suuts-khudaldana/", "unit_fingerprint": "river-garden|sale|4r|120sqm|f13", "first_seen_at": "2026-11-24T05:08:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "4 өдрийн өмнө"}, {"source": "unegui", "external_id": "10866902", "url": "https://www.unegui.mn/adv/10866902_zaisan-zhardin-rezidens-4-oroo-khudaldana/", "deal_type": "sale", "complex_slug": "jardin", "complex_name": "Jardin Residence", "zone": "Zaisan Foothills", "title": "Зайсан, жардин резиденс 4 өрөө 188,81мкв", "rooms": 4, "area_sqm": 188.81, "floor": 5, "total_floors": 6, "floor_tier": "high", "year_built": 2017, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "available", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.12 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1120000000, "price_per_sqm_mnt": 5931889, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10866902_zaisan-zhardin-rezidens-4-oroo-khudaldana/", "unit_fingerprint": "jardin|sale|4r|188sqm|f5", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10877750", "url": "https://www.unegui.mn/adv/10877750_time-square-t-5-oroo-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "time-square", "complex_name": "Time Square", "zone": "Marshall / Tuul River", "title": "Худ time square-т 5 өрөө орон сууц 165мкв", "rooms": 5, "area_sqm": 165.0, "floor": 2, "total_floors": 11, "floor_tier": "low", "year_built": 2017, "window_facing": "South, North", "faces_south": 1, "faces_west": 0, "parking_status": "none", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "1.25 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1250000000, "price_per_sqm_mnt": 7575758, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 3, "duplicate_urls": "https://www.unegui.mn/adv/10877750_time-square-t-5-oroo-oron-suuts-khudaldana/ | https://www.unegui.mn/adv/10893646_time-square-khotkhond-165-mkv-5-oroo-khudaldana/ | https://www.unegui.mn/adv/10894061_time-square-khotkhond-165mkv-5-oroo-khudaldana/", "unit_fingerprint": "time-square|sale|5r|166sqm|f2", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10816976", "url": "https://www.unegui.mn/adv/10816976_vega-city-148-8-mkv-4-oroo/", "deal_type": "sale", "complex_slug": "vega-city", "complex_name": "Vega City", "zone": "120 Myangat / Orchlon", "title": "Vega city 148.8 мкв 4 өрөө", "rooms": 4, "area_sqm": 148.0, "floor": 16, "total_floors": 23, "floor_tier": "high", "year_built": 2026, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "available", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.64 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1636800000, "price_per_sqm_mnt": 11059459, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10816976_vega-city-148-8-mkv-4-oroo/", "unit_fingerprint": "vega-city|sale|4r|148sqm|f16", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10791295", "url": "https://www.unegui.mn/adv/10791295_river-garden-1-d-5-oroo/", "deal_type": "sale", "complex_slug": "river-garden", "complex_name": "River Garden", "zone": "Marshall / Tuul River", "title": "Ривер гарден 1д 5 өрөө 188мкв", "rooms": 5, "area_sqm": 188.0, "floor": 1, "total_floors": 7, "floor_tier": "low", "year_built": 2015, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "included", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "1.84 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1842400000, "price_per_sqm_mnt": 9800000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10791295_river-garden-1-d-5-oroo/", "unit_fingerprint": "river-garden|sale|5r|188sqm|f1", "first_seen_at": "2026-11-24T05:08:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 өдрийн өмнө"}, {"source": "unegui", "external_id": "10708279", "url": "https://www.unegui.mn/adv/10708279_zaisan-budda-vista-khotkhond-300m2-pentkhaus-khudaldana/", "deal_type": "sale", "complex_slug": "buddha-vista", "complex_name": "Buddha Vista", "zone": "Zaisan Foothills", "title": "Зайсан, будда виста хотхонд 300м2 пентхаус", "rooms": 5, "area_sqm": 300.0, "floor": 16, "total_floors": 18, "floor_tier": "high", "year_built": 2015, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "available", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "2 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 2000000000, "price_per_sqm_mnt": 6666667, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 2, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10708279_zaisan-budda-vista-khotkhond-300m2-pentkhaus-khudaldana/", "unit_fingerprint": "buddha-vista|sale|5r|300sqm|f16", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "4 өдрийн өмнө"}, {"source": "unegui", "external_id": "10826791", "url": "https://www.unegui.mn/adv/10826791_japan-town-c1-83-43m2-3-oroo-kholsuulne/", "deal_type": "rent", "complex_slug": "japan-town", "complex_name": "Japan Town", "zone": "120 Myangat / Ikh Mongol", "title": "Худ japan town c1 блокд 83.43m2 3 өрөө", "rooms": 3, "area_sqm": 83.0, "floor": 5, "total_floors": 7, "floor_tier": "high", "year_built": 2007, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "3+1", "furnished": "", "raw_price_text": "3.2 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 3200000, "price_per_sqm_mnt": 38554, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10826791_japan-town-c1-83-43m2-3-oroo-kholsuulne/ | https://www.unegui.mn/adv/10896256_japan-town-c1-t-3oroo-kholsluulne/", "unit_fingerprint": "japan-town|rent|3r|84sqm|f5", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 цагийн өмнө"}, {"source": "unegui", "external_id": "10919328", "url": "https://www.unegui.mn/adv/10919328_king-tower-khotkhond-3-oroo-oron-suuts/", "deal_type": "rent", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "King tower хотхонд 3 өрөө 161м2 орон сууц", "rooms": 3, "area_sqm": 161.0, "floor": 11, "total_floors": 16, "floor_tier": "high", "year_built": 2023, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "2+1", "furnished": "", "raw_price_text": "3.5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 3500000, "price_per_sqm_mnt": 21739, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10919328_king-tower-khotkhond-3-oroo-oron-suuts/", "unit_fingerprint": "king-tower|rent|3r|162sqm|f11", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10918637", "url": "https://www.unegui.mn/adv/10918637_khan-hills-khotkhond-106m2-buren-tavilgatai-3-oroo-bair/", "deal_type": "rent", "complex_slug": "khan-hills", "complex_name": "Khan Hills", "zone": "Marshall / Tuul River", "title": "Khan hills хотхонд 106м2 3 өрөө байр", "rooms": 3, "area_sqm": 106.0, "floor": 10, "total_floors": 18, "floor_tier": "high", "year_built": 2016, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "3.7 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 3700000, "price_per_sqm_mnt": 34906, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10918637_khan-hills-khotkhond-106m2-buren-tavilgatai-3-oroo-bair/", "unit_fingerprint": "khan-hills|rent|3r|106sqm|f10", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10754068", "url": "https://www.unegui.mn/adv/10754068_gerlug-vista-3-oroo-tureesluulne/", "deal_type": "rent", "complex_slug": "gerlug-vista", "complex_name": "Gerlug Vista", "zone": "National Park / E-Mart", "title": "Гэрлүг виста хотхонд бүрэн тавилгатай 3 өрөө 97.13мкв", "rooms": 3, "area_sqm": 97.13, "floor": 17, "total_floors": 23, "floor_tier": "high", "year_built": 2021, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "4.8 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 4800000, "price_per_sqm_mnt": 49418, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10754068_gerlug-vista-3-oroo-tureesluulne/", "unit_fingerprint": "gerlug-vista|rent|3r|98sqm|f17", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 цагийн өмнө"}, {"source": "unegui", "external_id": "10894033", "url": "https://www.unegui.mn/adv/10894033_river-garden-3oroo-tureesluulne/", "deal_type": "rent", "complex_slug": "river-garden", "complex_name": "River Garden", "zone": "Marshall / Tuul River", "title": "River garden 3өрөө 72мкв", "rooms": 3, "area_sqm": 72.0, "floor": 4, "total_floors": 16, "floor_tier": "low", "year_built": 2020, "window_facing": "West, North", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 5000000, "price_per_sqm_mnt": 69444, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10894033_river-garden-3oroo-tureesluulne/", "unit_fingerprint": "river-garden|rent|3r|72sqm|f4", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өнөөдөр"}, {"source": "unegui", "external_id": "10727994", "url": "https://www.unegui.mn/adv/10727994_zaisan-budda-vista-4-oroo-oron-suuts-kholsluulne/", "deal_type": "rent", "complex_slug": "buddha-vista", "complex_name": "Buddha Vista", "zone": "Zaisan Foothills", "title": "Зайсан будда виста 4 өрөө орон сууц 122m2", "rooms": 4, "area_sqm": 122.0, "floor": 4, "total_floors": 17, "floor_tier": "low", "year_built": 2011, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "3+1", "furnished": "", "raw_price_text": "6 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 6000000, "price_per_sqm_mnt": 49180, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10727994_zaisan-budda-vista-4-oroo-oron-suuts-kholsluulne/", "unit_fingerprint": "buddha-vista|rent|4r|122sqm|f4", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 өдрийн өмнө"}, {"source": "unegui", "external_id": "10911665", "url": "https://www.unegui.mn/adv/10911665_river-garden-2-khotkhon-113-5m-kv-4-oroo-buren-tavilgatai-bair-tureesluulne/", "deal_type": "rent", "complex_slug": "river-garden", "complex_name": "River Garden", "zone": "Marshall / Tuul River", "title": "River garden-2 хотхон 113,5м.кв 4 өрөө бүрэн тавилгатай байр", "rooms": 4, "area_sqm": 113.5, "floor": 5, "total_floors": 22, "floor_tier": "low", "year_built": 2018, "window_facing": "West, North", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "6+1", "furnished": "fully_furnished", "raw_price_text": "6.5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 6500000, "price_per_sqm_mnt": 57269, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10911665_river-garden-2-khotkhon-113-5m-kv-4-oroo-buren-tavilgatai-bair-tureesluulne/ | https://www.unegui.mn/adv/10921332_river-garden-2-khotkhon-113-5m-kv-4-oroo-buren-tavilgatai-bair-tureesluulne/", "unit_fingerprint": "river-garden|rent|4r|114sqm|f5", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "4 өдрийн өмнө"}, {"source": "unegui", "external_id": "10811200", "url": "https://www.unegui.mn/adv/10811200_japan-town-baruun-royal-garden-5-oroo/", "deal_type": "rent", "complex_slug": "japan-town", "complex_name": "Japan Town", "zone": "120 Myangat / Ikh Mongol", "title": "Japan town баруун royal garden 5 өрөө граштай 220мкв", "rooms": 5, "area_sqm": 220.0, "floor": 5, "total_floors": 7, "floor_tier": "high", "year_built": 2015, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "7.5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 7500000, "price_per_sqm_mnt": 34091, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10811200_japan-town-baruun-royal-garden-5-oroo/", "unit_fingerprint": "japan-town|rent|5r|220sqm|f5", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10871548", "url": "https://www.unegui.mn/adv/10871548_vega-city-125mkv-4-oroo/", "deal_type": "rent", "complex_slug": "vega-city", "complex_name": "Vega City", "zone": "120 Myangat / Orchlon", "title": "Худ vega city 125мкв 4 өрөө", "rooms": 4, "area_sqm": 125.0, "floor": 10, "total_floors": 15, "floor_tier": "high", "year_built": 2023, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "3+1", "furnished": "furnished", "raw_price_text": "8.5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 8500000, "price_per_sqm_mnt": 68000, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10871548_vega-city-125mkv-4-oroo/", "unit_fingerprint": "vega-city|rent|4r|126sqm|f10", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "6 өдрийн өмнө"}, {"source": "unegui", "external_id": "10869478", "url": "https://www.unegui.mn/adv/10869478_khan-uul-duureg-15-khoroo-vega-siti-khotkhond/", "deal_type": "rent", "complex_slug": "vega-city", "complex_name": "Vega City", "zone": "120 Myangat / Orchlon", "title": "Хан-уул дүүрэг 15 хороо вега сити хотхонд 125мкв 4 өрөө", "rooms": 4, "area_sqm": 125.0, "floor": 11, "total_floors": 16, "floor_tier": "high", "year_built": 2025, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "3+1", "furnished": "", "raw_price_text": "8.5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 8500000, "price_per_sqm_mnt": 68000, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10869478_khan-uul-duureg-15-khoroo-vega-siti-khotkhond/", "unit_fingerprint": "vega-city|rent|4r|126sqm|f11", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10697159", "url": "https://www.unegui.mn/adv/10697159_marshal-taun-khotkhond-110-mkv-3-oroo-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "marshall-town", "complex_name": "Marshall Town", "zone": "Marshall / Tuul River", "title": "Маршал таун хотхонд 110 мкв 3 өрөө орон сууц", "rooms": 3, "area_sqm": 110.0, "floor": 1, "total_floors": 6, "floor_tier": "low", "year_built": 2015, "window_facing": "West", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "520 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 520000000, "price_per_sqm_mnt": 4727273, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 4, "duplicate_urls": "https://www.unegui.mn/adv/10697159_marshal-taun-khotkhond-110-mkv-3-oroo-oron-suuts-khudaldana/ | https://www.unegui.mn/adv/10830481_110mkv-3oroo-2ugaalgyn-orootei/ | https://www.unegui.mn/adv/10863073_marshal-taun-khotkhond-3-oroo-oron-suuts-khudaldana/ | https://www.unegui.mn/adv/10879145_marshal-taund-3-oroo-oron-suuts-khudaldana/", "unit_fingerprint": "marshall-town|sale|3r|110sqm|f1", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "5 өдрийн өмнө"}, {"source": "unegui", "external_id": "10919437", "url": "https://www.unegui.mn/adv/10919437_marshal-town-116mkv-4-uruu/", "deal_type": "sale", "complex_slug": "marshall-town", "complex_name": "Marshall Town", "zone": "Marshall / Tuul River", "title": "Marshal town 116mkv 4 uruu", "rooms": 4, "area_sqm": 116.0, "floor": 5, "total_floors": 6, "floor_tier": "high", "year_built": 2013, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "522 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 522000000, "price_per_sqm_mnt": 4500000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10919437_marshal-town-116mkv-4-uruu/", "unit_fingerprint": "marshall-town|sale|4r|116sqm|f5", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10919219", "url": "https://www.unegui.mn/adv/10919219_khud-17-khoroo-marshal-taun-khotkhond-116-ikv-4-oroo-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "marshall-town", "complex_name": "Marshall Town", "zone": "Marshall / Tuul River", "title": "Худ 17-р хороо, маршал таун хотхонд 116мкв 4 өрөө орон сууц", "rooms": 4, "area_sqm": 116.0, "floor": 6, "total_floors": 6, "floor_tier": "high", "year_built": 2013, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "522 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 522000000, "price_per_sqm_mnt": 4500000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10919219_khud-17-khoroo-marshal-taun-khotkhond-116-ikv-4-oroo-oron-suuts-khudaldana/ | https://www.unegui.mn/adv/10919599_marshall-town-4-oroo-bair/", "unit_fingerprint": "marshall-town|sale|4r|116sqm|f6", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10853981", "url": "https://www.unegui.mn/adv/10853981_king-tower-khotkhond-4-r-eelzhiin-3-oroo-oron-suuts-khudaldana/", "deal_type": "sale", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "King tower хотхонд 4-р ээлжийн 3 өрөө 83мкв байр", "rooms": 3, "area_sqm": 83.5, "floor": 5, "total_floors": 19, "floor_tier": "mid", "year_built": 2024, "window_facing": "West, East", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "627.5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 627500000, "price_per_sqm_mnt": 7514970, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10853981_king-tower-khotkhond-4-r-eelzhiin-3-oroo-oron-suuts-khudaldana/", "unit_fingerprint": "king-tower|sale|3r|84sqm|f5", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10826732", "url": "https://www.unegui.mn/adv/10826732_japan-town-c1-blokt-93-3m2-3-oroo-khudaldana/", "deal_type": "sale", "complex_slug": "japan-town", "complex_name": "Japan Town", "zone": "120 Myangat / Ikh Mongol", "title": "Japan town c1 блокт 93.3м2 3 өрөө", "rooms": 3, "area_sqm": 93.0, "floor": 1, "total_floors": 7, "floor_tier": "low", "year_built": 2008, "window_facing": "West", "faces_south": 0, "faces_west": 1, "parking_status": "none", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "634 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 634000000, "price_per_sqm_mnt": 6817204, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10826732_japan-town-c1-blokt-93-3m2-3-oroo-khudaldana/", "unit_fingerprint": "japan-town|sale|3r|94sqm|f1", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10896843", "url": "https://www.unegui.mn/adv/10896843_japan-town-c1-4-oroo-bair/", "deal_type": "sale", "complex_slug": "japan-town", "complex_name": "Japan Town", "zone": "120 Myangat / Ikh Mongol", "title": "Japan town 4 oroo 100mkv", "rooms": 4, "area_sqm": 100.0, "floor": 2, "total_floors": 7, "floor_tier": "low", "year_built": 2006, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "available", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "693 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 693000000, "price_per_sqm_mnt": 6930000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10896843_japan-town-c1-4-oroo-bair/", "unit_fingerprint": "japan-town|sale|4r|100sqm|f2", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 цагийн өмнө"}, {"source": "unegui", "external_id": "10805201", "url": "https://www.unegui.mn/adv/10805201_vega-city-shine-3-oroo/", "deal_type": "sale", "complex_slug": "vega-city", "complex_name": "Vega City", "zone": "120 Myangat / Orchlon", "title": "Vega city шинэ 3 өрөө 84,31мкв", "rooms": 3, "area_sqm": 84.31, "floor": 8, "total_floors": 16, "floor_tier": "high", "year_built": 2026, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "865 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 865000000, "price_per_sqm_mnt": 10259756, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10805201_vega-city-shine-3-oroo/", "unit_fingerprint": "vega-city|sale|3r|84sqm|f8", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "4 өдрийн өмнө"}, {"source": "unegui", "external_id": "10874300", "url": "https://www.unegui.mn/adv/10874300_river-garden-4-oroo/", "deal_type": "sale", "complex_slug": "river-garden", "complex_name": "River Garden", "zone": "Marshall / Tuul River", "title": "River garden 4 өрөө", "rooms": 4, "area_sqm": 120.0, "floor": 8, "total_floors": 16, "floor_tier": "high", "year_built": 2020, "window_facing": "East, North", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "Банкны зээлээр", "furnished": "furnished", "raw_price_text": "1.12 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1120000000, "price_per_sqm_mnt": 9333333, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10874300_river-garden-4-oroo/", "unit_fingerprint": "river-garden|sale|4r|120sqm|f8", "first_seen_at": "2026-11-24T05:08:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10803695", "url": "https://www.unegui.mn/adv/10803695_khan-hills-2t-4-uruu/", "deal_type": "sale", "complex_slug": "khan-hills", "complex_name": "Khan Hills", "zone": "Marshall / Tuul River", "title": "Khan hills 2t 4 uruu 148m2 bair", "rooms": 4, "area_sqm": 148.0, "floor": 7, "total_floors": 12, "floor_tier": "high", "year_built": 2026, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "1.12 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1125000000, "price_per_sqm_mnt": 7601351, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10803695_khan-hills-2t-4-uruu/", "unit_fingerprint": "khan-hills|sale|4r|148sqm|f7", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10868451", "url": "https://www.unegui.mn/adv/10868451_king-tower-khotkhond-5-oroo-pentkhaus-khudaldana/", "deal_type": "sale", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "King tower хотхонд 5 өрөө пентхаус 245мкв", "rooms": 5, "area_sqm": 245.0, "floor": 16, "total_floors": 16, "floor_tier": "high", "year_built": 2023, "window_facing": "East", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.47 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1470000000, "price_per_sqm_mnt": 6000000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10868451_king-tower-khotkhond-5-oroo-pentkhaus-khudaldana/", "unit_fingerprint": "king-tower|sale|5r|246sqm|f16", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өнөөдөр"}, {"source": "unegui", "external_id": "10841032", "url": "https://www.unegui.mn/adv/10841032_bella-vista-154m2-4-oroo/", "deal_type": "sale", "complex_slug": "bella-vista", "complex_name": "Bella Vista", "zone": "Zaisan Foothills", "title": "Bella vista 154м² 4 өрөө", "rooms": 4, "area_sqm": 154.0, "floor": 3, "total_floors": 12, "floor_tier": "low", "year_built": 2012, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "available", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "1.5 Тэрбум ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 1500000000, "price_per_sqm_mnt": 9740260, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10841032_bella-vista-154m2-4-oroo/", "unit_fingerprint": "bella-vista|sale|4r|154sqm|f3", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "9426883", "url": "https://www.unegui.mn/adv/9426883_artsat-lakshari-villazh-khotkhon/", "deal_type": "sale", "complex_slug": "vega-city", "complex_name": "Vega City", "zone": "120 Myangat / Orchlon", "title": "Vega city 148мкв 4 өрөө", "rooms": 4, "area_sqm": 148.0, "floor": 15, "total_floors": 23, "floor_tier": "high", "year_built": 2026, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "1.63 Тэрбум ₮", "start_price_text": "1,900,000,000 ₮", "start_price_mnt": 1900000000, "total_price_mnt": 1628000000, "price_per_sqm_mnt": 11000000, "price_basis": "total", "seller_cut_pct": 14.32, "tracked_drop_pct": 0.0, "effective_drop_pct": 14.32, "family_score": 1, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/9426883_artsat-lakshari-villazh-khotkhon/", "unit_fingerprint": "vega-city|sale|4r|148sqm|f15", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "5 өдрийн өмнө"}, {"source": "unegui", "external_id": "10749598", "url": "https://www.unegui.mn/adv/10749598_khotyn-tovd-tavilgatai-3-oroo-urt-khugatsaand-kholsluulne/", "deal_type": "rent", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "King tower 3 uruu bair 94m2", "rooms": 3, "area_sqm": 94.0, "floor": 6, "total_floors": 16, "floor_tier": "mid", "year_built": 2021, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "2+1", "furnished": "furnished", "raw_price_text": "3 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 3000000, "price_per_sqm_mnt": 31915, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 0, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10749598_khotyn-tovd-tavilgatai-3-oroo-urt-khugatsaand-kholsluulne/", "unit_fingerprint": "king-tower|rent|3r|94sqm|f6", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}, {"source": "unegui", "external_id": "10890694", "url": "https://www.unegui.mn/adv/10890694_khan-uul-vega-sitid-mastertai-3-oroo/", "deal_type": "rent", "complex_slug": "vega-city", "complex_name": "Vega City", "zone": "120 Myangat / Orchlon", "title": "Хан-Уул, Вега Ситид мастертай 3 өрөө", "rooms": 3, "area_sqm": 78.0, "floor": 3, "total_floors": 16, "floor_tier": "low", "year_built": 2025, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "3+1", "furnished": "fully_furnished", "raw_price_text": "4.25 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 4250000, "price_per_sqm_mnt": 54487, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 0, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10890694_khan-uul-vega-sitid-mastertai-3-oroo/", "unit_fingerprint": "vega-city|rent|3r|78sqm|f3", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "4 өдрийн өмнө"}, {"source": "unegui", "external_id": "10876864", "url": "https://www.unegui.mn/adv/10876864_vega-siti-khotkhond-shine-tokhilog-4-oroo-bairyg-ofis-urt-khugatsaagaar-tureesluulne/", "deal_type": "rent", "complex_slug": "vega-city", "complex_name": "Vega City", "zone": "120 Myangat / Orchlon", "title": "Вега сити хотхонд шинэ 4 өрөө байр 138мкв", "rooms": 4, "area_sqm": 138.0, "floor": 1, "total_floors": 12, "floor_tier": "low", "year_built": 2024, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "2+1", "furnished": "", "raw_price_text": "7 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 7000000, "price_per_sqm_mnt": 50725, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 0, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10876864_vega-siti-khotkhond-shine-tokhilog-4-oroo-bairyg-ofis-urt-khugatsaagaar-tureesluulne/", "unit_fingerprint": "vega-city|rent|4r|138sqm|f1", "first_seen_at": "2026-11-24T05:28:10+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "1 өдрийн өмнө"}, {"source": "unegui", "external_id": "10908696", "url": "https://www.unegui.mn/adv/10908696_vega-city-d-132mkv-4-oroo/", "deal_type": "rent", "complex_slug": "vega-city", "complex_name": "Vega City", "zone": "120 Myangat / Orchlon", "title": "Vega city-д 132мкв 4 өрөө", "rooms": 4, "area_sqm": 132.0, "floor": 4, "total_floors": 16, "floor_tier": "low", "year_built": 2023, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "3+1", "furnished": "", "raw_price_text": "7.5 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 7500000, "price_per_sqm_mnt": 56818, "price_basis": "monthly", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 0, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10908696_vega-city-d-132mkv-4-oroo/ | https://www.unegui.mn/adv/10919217_vega-city-4-oroo-bair/", "unit_fingerprint": "vega-city|rent|4r|132sqm|f4", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "5 өдрийн өмнө"}, {"source": "unegui", "external_id": "10869992", "url": "https://www.unegui.mn/adv/10869992_king-tauer-khotkhond-mastertai-112-17mk-3-oroo-khudaldana/", "deal_type": "sale", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "Кинг тауер хотхонд мастертай 112.17мк 3 өрөө", "rooms": 3, "area_sqm": 112.17, "floor": 3, "total_floors": 16, "floor_tier": "low", "year_built": 2022, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "Бэлэн төлөлтөөр", "furnished": "", "raw_price_text": "650.59 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 650586000, "price_per_sqm_mnt": 5800000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 0, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10869992_king-tauer-khotkhond-mastertai-112-17mk-3-oroo-khudaldana/", "unit_fingerprint": "king-tower|sale|3r|112sqm|f3", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 өдрийн өмнө"}, {"source": "unegui", "external_id": "10854572", "url": "https://www.unegui.mn/adv/10854572_king-tower-4uruu-zarna/", "deal_type": "sale", "complex_slug": "king-tower", "complex_name": "King Tower", "zone": "Marshall / Tuul River", "title": "King tower 4uruu 113mkv", "rooms": 4, "area_sqm": 113.0, "floor": 7, "total_floors": 16, "floor_tier": "mid", "year_built": 2026, "window_facing": "", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "791 сая ₮", "start_price_text": "", "start_price_mnt": null, "total_price_mnt": 791000000, "price_per_sqm_mnt": 7000000, "price_basis": "total", "seller_cut_pct": 0.0, "tracked_drop_pct": 0.0, "effective_drop_pct": 0.0, "family_score": 0, "duplicate_listing_count": 1, "duplicate_urls": "https://www.unegui.mn/adv/10854572_king-tower-4uruu-zarna/", "unit_fingerprint": "king-tower|sale|4r|114sqm|f7", "first_seen_at": "2026-11-24T06:50:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "2 долоо хоногийн өмнө"}, {"source": "unegui", "external_id": "10910594", "url": "https://www.unegui.mn/adv/10910594_river-garden-1-khotkhond-117-5-mkv-3-oroo-bair-mashin-barter-sonsono/", "deal_type": "sale", "complex_slug": "river-garden", "complex_name": "River Garden", "zone": "Marshall / Tuul River", "title": "Ривер гарден 1 хотхонд 117.5 мкв 3 өрөө", "rooms": 3, "area_sqm": 117.0, "floor": 3, "total_floors": 9, "floor_tier": "mid", "year_built": 2017, "window_facing": "North", "faces_south": 0, "faces_west": 0, "parking_status": "none", "payment_terms": "Банкны зээлээр", "furnished": "", "raw_price_text": "830 сая ₮", "start_price_text": "880,000,000 ₮", "start_price_mnt": 880000000, "total_price_mnt": 830000000, "price_per_sqm_mnt": 7094017, "price_basis": "total", "seller_cut_pct": 5.68, "tracked_drop_pct": 0.0, "effective_drop_pct": 5.68, "family_score": 0, "duplicate_listing_count": 2, "duplicate_urls": "https://www.unegui.mn/adv/10910594_river-garden-1-khotkhond-117-5-mkv-3-oroo-bair-mashin-barter-sonsono/ | https://www.unegui.mn/adv/10910673_khud-17-khoroo-river-garden-1-khotkhond-3-oroo-oron-suuts-khudaldana/", "unit_fingerprint": "river-garden|sale|3r|118sqm|f3", "first_seen_at": "2026-11-24T05:08:08+00:00", "last_seen_at": "2026-11-24T06:50:08+00:00", "published_label": "Өчигдөр"}], "trends": [{"day": "2026-11-24", "deal_type": "rent", "obs_count": 78, "avg_sqm_mnt": 45600, "avg_total_mnt": 5768590}, {"day": "2026-11-24", "deal_type": "sale", "obs_count": 86, "avg_sqm_mnt": 8091496, "avg_total_mnt": 1212839988}]};
+
+    const state = {
+      deal: "all",
+      complex: "all",
+      rooms: "all",
+      minArea: "",
+      maxPrice: "",
+      sort: "family",
+      southWest: false,
+      parking: false,
+      highFloor: false,
+      priceCut: false,
+    };
+
+    const fmtM = (v) => {
+      if (v == null) return "—";
+      if (v >= 1e9) return (v / 1e9).toFixed(2) + "B ₮";
+      if (v >= 1e6) return (v / 1e6).toFixed(1) + "M ₮";
+      return v.toLocaleString() + " ₮";
+    };
+    const fmtSqm = (v) => (v == null ? "—" : (v / 1e6).toFixed(2) + "M ₮/m²");
+    const median = (arr) => {
+      const nums = arr.filter((x) => typeof x === "number" && !Number.isNaN(x)).sort((a, b) => a - b);
+      if (!nums.length) return null;
+      const mid = Math.floor(nums.length / 2);
+      return nums.length % 2 ? nums[mid] : (nums[mid - 1] + nums[mid]) / 2;
+    };
+
+    // Populate complex dropdown
+    const fComplex = document.getElementById("fComplex");
+    DATA.complexes.forEach((c) => {
+      const opt = document.createElement("option");
+      opt.value = c.slug;
+      opt.textContent = `${c.name} (${c.sale_units + c.rent_units})`;
+      fComplex.appendChild(opt);
+    });
+
+    // Meta pill
+    const run = DATA.latest_run;
+    document.getElementById("metaPill").textContent =
+      `Updated ${DATA.generated_at} · ${DATA.dedup_active_count} unique units (from ${DATA.raw_active_count} ads)`;
+
+    function getFiltered() {
+      return DATA.listings.filter((l) => {
+        if (state.deal !== "all" && l.deal_type !== state.deal) return false;
+        if (state.complex !== "all" && l.complex_slug !== state.complex) return false;
+        if (state.rooms !== "all" && String(l.rooms) !== state.rooms) return false;
+        if (state.minArea && (l.area_sqm || 0) < Number(state.minArea)) return false;
+        if (state.maxPrice && (l.total_price_mnt || 0) > Number(state.maxPrice) * 1e6) return false;
+        if (state.southWest && !(l.faces_south || l.faces_west)) return false;
+        if (state.parking && !(l.parking_status === "included" || l.parking_status === "available")) return false;
+        if (state.highFloor && l.floor_tier !== "high") return false;
+        if (state.priceCut && !(l.effective_drop_pct && l.effective_drop_pct > 0)) return false;
+        return true;
+      }).sort((a, b) => {
+        switch (state.sort) {
+          case "sqm_asc": return (a.price_per_sqm_mnt || 1e18) - (b.price_per_sqm_mnt || 1e18);
+          case "price_asc": return (a.total_price_mnt || 1e18) - (b.total_price_mnt || 1e18);
+          case "cut_desc": return (b.effective_drop_pct || 0) - (a.effective_drop_pct || 0);
+          case "area_desc": return (b.area_sqm || 0) - (a.area_sqm || 0);
+          case "newest": return (b.first_seen_at || "").localeCompare(a.first_seen_at || "");
+          default:
+            return (b.family_score - a.family_score)
+              || ((a.price_per_sqm_mnt || 1e18) - (b.price_per_sqm_mnt || 1e18));
+        }
+      });
+    }
+
+    function renderKPIs(items) {
+      const sales = items.filter((i) => i.deal_type === "sale");
+      const rents = items.filter((i) => i.deal_type === "rent");
+      const cuts = items.filter((i) => i.effective_drop_pct && i.effective_drop_pct > 0);
+      const swMatches = items.filter((i) => i.faces_south || i.faces_west);
+      const medSaleSqm = median(sales.map((s) => s.price_per_sqm_mnt));
+      const medRent = median(rents.map((r) => r.total_price_mnt));
+
+      document.getElementById("kpiGrid").innerHTML = `
+        <div class="kpi">
+          <div class="kpi-label">Unique Units Shown</div>
+          <div class="kpi-value">${items.length}</div>
+          <div class="kpi-sub">${sales.length} sale · ${rents.length} rent</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Median Sale ₮/m²</div>
+          <div class="kpi-value">${fmtSqm(medSaleSqm)}</div>
+          <div class="kpi-sub">Deduplicated active sales</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Median Monthly Rent</div>
+          <div class="kpi-value">${fmtM(medRent)}</div>
+          <div class="kpi-sub">Long-term rentals (3–5 өрөө)</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">South / West Facing</div>
+          <div class="kpi-value">${swMatches.length}</div>
+          <div class="kpi-sub">Mentioned in description</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Active Price Cuts</div>
+          <div class="kpi-value">${cuts.length}</div>
+          <div class="kpi-sub">Seller or tracked drops</div>
+        </div>
+      `;
+    }
+
+    function parkingBadge(status) {
+      if (status === "included") return `<span class="badge b-good">🚗 Parking incl.</span>`;
+      if (status === "available") return `<span class="badge b-good">🚗 Parking avail.</span>`;
+      if (status === "none") return `<span class="badge b-neutral">No garage</span>`;
+      return "";
+    }
+
+    function renderCards(items) {
+      document.getElementById("resultCount").textContent =
+        `Showing ${items.length} unique apartments (sorted by ${document.getElementById("fSort").selectedOptions[0].textContent})`;
+
+      const wrap = document.getElementById("listingCards");
+      if (!items.length) {
+        wrap.innerHTML = `<div class="empty" style="grid-column:1/-1;">No apartments match your current filters. Try relaxing one toggle.</div>`;
+        return;
+      }
+
+      wrap.innerHTML = items.map((l) => {
+        const dealBadge = l.deal_type === "rent"
+          ? `<span class="badge b-rent">RENT</span>`
+          : `<span class="badge b-sale">SALE</span>`;
+        const floorTxt = l.floor != null
+          ? (l.total_floors ? `${l.floor}/${l.total_floors}F` : `${l.floor}F`)
+          : "Floor —";
+        const floorBadge = l.floor_tier === "high" ? `<span class="badge b-good">High floor</span>` : "";
+        const winBadge = l.window_facing
+          ? `<span class="badge ${(l.faces_south || l.faces_west) ? "b-good" : "b-neutral"}">☀️ ${l.window_facing}</span>`
+          : "";
+        const cutBadge = l.effective_drop_pct > 0
+          ? `<span class="badge b-cut">-${l.effective_drop_pct.toFixed(1)}% cut</span>`
+          : "";
+        const dupBadge = l.duplicate_listing_count > 1
+          ? `<span class="badge b-neutral">${l.duplicate_listing_count} realtor ads</span>`
+          : "";
+        const termsTxt = l.deal_type === "rent"
+          ? [l.payment_terms, l.furnished ? l.furnished.replace("_", " ") : ""].filter(Boolean).join(" · ")
+          : (l.year_built ? `Built ${l.year_built}` : "");
+
+        return `
+          <article class="l-card">
+            <div class="l-top">
+              <div>
+                <div>${dealBadge} <span class="score-pill">Match ${l.family_score}/6</span></div>
+                <div class="l-complex" style="margin-top:4px;">${l.complex_name}</div>
+              </div>
+              <div>
+                <div class="l-price">${fmtM(l.total_price_mnt)}${l.deal_type === "rent" ? "/mo" : ""}</div>
+                <div class="l-sqm">${l.deal_type === "sale" ? fmtSqm(l.price_per_sqm_mnt) : (l.price_per_sqm_mnt ? Math.round(l.price_per_sqm_mnt/1000) + "k ₮/m²" : "")}</div>
+              </div>
+            </div>
+            <div class="l-specs">
+              <strong>${l.rooms} өрөө</strong> · <strong>${l.area_sqm} m²</strong> · ${floorTxt} ${termsTxt ? "· " + termsTxt : ""}
+            </div>
+            <div>${winBadge}${parkingBadge(l.parking_status)}${floorBadge}${cutBadge}${dupBadge}</div>
+            <div class="l-title">${l.title}</div>
+            <div class="l-footer">
+              <span style="color:var(--muted);">${l.published_label || l.first_seen_at.slice(0, 10)}</span>
+              <a class="btn-link" href="${l.url}" target="_blank" rel="noopener">Open on Unegui ↗</a>
+            </div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function renderRvbTable() {
+      document.getElementById("rvbBody").innerHTML = DATA.complexes.map((c) => `
+        <tr>
+          <td><strong>${c.name}</strong></td>
+          <td style="color:var(--muted);">${c.zone}</td>
+          <td class="num">${c.sale_units}</td>
+          <td class="num">${fmtSqm(c.sale_median_sqm_mnt)}</td>
+          <td class="num">${fmtM(c.sale_median_total_mnt)}</td>
+          <td class="num">${c.rent_units}</td>
+          <td class="num">${fmtM(c.median_monthly_rent_mnt)}</td>
+          <td class="num">${c.gross_yield_pct_sqm != null ? c.gross_yield_pct_sqm.toFixed(2) + "%" : "—"}</td>
+          <td class="num">${c.price_to_rent_years != null ? c.price_to_rent_years.toFixed(1) + " yrs" : "—"}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderDropsTable() {
+      const cuts = DATA.listings
+        .filter((l) => l.effective_drop_pct && l.effective_drop_pct > 0)
+        .sort((a, b) => b.effective_drop_pct - a.effective_drop_pct);
+
+      const body = document.getElementById("dropsBody");
+      if (!cuts.length) {
+        body.innerHTML = `<tr><td colspan="9" class="empty">No active price cuts yet. Daily scans will surface reductions automatically.</td></tr>`;
+        return;
+      }
+      body.innerHTML = cuts.map((l) => {
+        const orig = l.start_price_mnt || Math.round(l.total_price_mnt / (1 - l.effective_drop_pct / 100));
+        const prefs = [l.window_facing, l.parking_status === "included" ? "Parking" : "", l.floor_tier === "high" ? "High F" : ""].filter(Boolean).join(", ");
+        return `
+          <tr>
+            <td><span class="badge ${l.deal_type === "rent" ? "b-rent" : "b-sale"}">${l.deal_type.toUpperCase()}</span></td>
+            <td><strong>${l.complex_name}</strong></td>
+            <td>${l.rooms} өрөө · ${l.area_sqm} m² · ${l.floor || "?"}F</td>
+            <td style="color:var(--muted);">${prefs || "—"}</td>
+            <td class="num">${fmtM(orig)}</td>
+            <td class="num"><strong>${fmtM(l.total_price_mnt)}</strong></td>
+            <td class="num"><span class="badge b-cut">-${l.effective_drop_pct.toFixed(1)}%</span></td>
+            <td class="num">${l.duplicate_listing_count}x</td>
+            <td><a href="${l.url}" target="_blank" rel="noopener">View ↗</a></td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    let scatterChart = null;
+    function renderCharts() {
+      if (typeof Chart === "undefined") return;
+
+      const saleC = DATA.complexes.filter((c) => c.sale_median_sqm_mnt);
+      new Chart(document.getElementById("chartSaleSqm"), {
+        type: "bar",
+        data: {
+          labels: saleC.map((c) => c.name),
+          datasets: [{
+            label: "Median Sale M ₮/m²",
+            data: saleC.map((c) => +(c.sale_median_sqm_mnt / 1e6).toFixed(2)),
+            backgroundColor: "#0f766e",
+            borderRadius: 6,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, title: { display: true, text: "M ₮ / m²" } } },
+        },
+      });
+
+      const rentC = DATA.complexes.filter((c) => c.median_monthly_rent_mnt);
+      new Chart(document.getElementById("chartRentMo"), {
+        type: "bar",
+        data: {
+          labels: rentC.map((c) => c.name),
+          datasets: [{
+            label: "Median Rent M ₮/mo",
+            data: rentC.map((c) => +(c.median_monthly_rent_mnt / 1e6).toFixed(2)),
+            backgroundColor: "#2563eb",
+            borderRadius: 6,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, title: { display: true, text: "M ₮ / month" } } },
+        },
+      });
+
+      renderScatter("sale");
+
+      // Trend line chart
+      const days = [...new Set(DATA.trends.map((t) => t.day))].sort();
+      const saleByDay = Object.fromEntries(DATA.trends.filter((t) => t.deal_type === "sale").map((t) => [t.day, +(t.avg_sqm_mnt / 1e6).toFixed(2)]));
+      const rentByDay = Object.fromEntries(DATA.trends.filter((t) => t.deal_type === "rent").map((t) => [t.day, +(t.avg_total_mnt / 1e6).toFixed(2)]));
+      new Chart(document.getElementById("chartTrends"), {
+        type: "line",
+        data: {
+          labels: days,
+          datasets: [
+            { label: "Avg Sale (M ₮/m²)", data: days.map((d) => saleByDay[d] ?? null), borderColor: "#0f766e", tension: 0.25 },
+            { label: "Avg Rent (M ₮/mo)", data: days.map((d) => rentByDay[d] ?? null), borderColor: "#2563eb", tension: 0.25 },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: false } },
+        },
+      });
+    }
+
+    function renderScatter(deal) {
+      if (typeof Chart === "undefined") return;
+      if (scatterChart) scatterChart.destroy();
+      const palette = ["#0f766e","#2563eb","#d97706","#dc2626","#7c3aed","#059669","#db2777","#4f46e5","#ea580c","#0284c7","#65a30d","#9333ea"];
+      const datasets = DATA.complexes.map((c, idx) => {
+        const pts = DATA.listings
+          .filter((l) => l.deal_type === deal && l.complex_slug === c.slug && l.area_sqm && l.total_price_mnt)
+          .map((l) => ({
+            x: l.area_sqm,
+            y: +(l.total_price_mnt / 1e6).toFixed(1),
+            url: l.url,
+            label: `${l.complex_name} · ${l.rooms} өрөө · ${l.area_sqm}m² · ${fmtM(l.total_price_mnt)}`,
+          }));
+        return {
+          label: c.name,
+          data: pts,
+          backgroundColor: palette[idx % palette.length],
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        };
+      }).filter((ds) => ds.data.length > 0);
+
+      scatterChart = new Chart(document.getElementById("chartScatter"), {
+        type: "scatter",
+        data: { datasets },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (_, elements) => {
+            if (!elements.length) return;
+            const el = elements[0];
+            const pt = scatterChart.data.datasets[el.datasetIndex].data[el.index];
+            if (pt && pt.url) window.open(pt.url, "_blank", "noopener");
+          },
+          plugins: {
+            tooltip: {
+              callbacks: { label: (ctx) => ctx.raw.label },
+            },
+          },
+          scales: {
+            x: { title: { display: true, text: "Area (m²)" } },
+            y: { title: { display: true, text: deal === "sale" ? "Total Price (M ₮)" : "Monthly Rent (M ₮)" } },
+          },
+        },
+      });
+    }
+
+    function updateAll() {
+      const items = getFiltered();
+      renderKPIs(items);
+      renderCards(items);
+    }
+
+    // Wire inputs
+    ["fDeal", "fComplex", "fRooms", "fSort"].forEach((id) => {
+      document.getElementById(id).addEventListener("change", (e) => {
+        state[id.slice(1).toLowerCase()] = e.target.value;
+        updateAll();
+      });
+    });
+    document.getElementById("fMinArea").addEventListener("input", (e) => { state.minArea = e.target.value; updateAll(); });
+    document.getElementById("fMaxPrice").addEventListener("input", (e) => { state.maxPrice = e.target.value; updateAll(); });
+    document.querySelectorAll(".chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        const k = chip.dataset.key;
+        state[k] = !state[k];
+        chip.classList.toggle("on", state[k]);
+        updateAll();
+      });
+    });
+    document.getElementById("btnReset").addEventListener("click", () => {
+      Object.assign(state, { deal: "all", complex: "all", rooms: "all", minArea: "", maxPrice: "", sort: "family", southWest: false, parking: false, highFloor: false, priceCut: false });
+      document.getElementById("fDeal").value = "all";
+      document.getElementById("fComplex").value = "all";
+      document.getElementById("fRooms").value = "all";
+      document.getElementById("fMinArea").value = "";
+      document.getElementById("fMaxPrice").value = "";
+      document.getElementById("fSort").value = "family";
+      document.querySelectorAll(".chip").forEach((c) => c.classList.remove("on"));
+      updateAll();
+    });
+    document.getElementById("scatterDeal").addEventListener("change", (e) => renderScatter(e.target.value));
+
+    // Tabs
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.remove("active"));
+        document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
+        btn.classList.add("active");
+        document.getElementById("tab-" + btn.dataset.tab).classList.add("active");
+      });
+    });
+
+    updateAll();
+    renderRvbTable();
+    renderDropsTable();
+    renderCharts();
+  </script>
+</body>
+</html>

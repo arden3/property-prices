@@ -16,8 +16,9 @@ data/ub_prices.db-journal
 data/ub_prices.db-wal
 data/ub_prices.db-shm
 
-# Local scratch / debug HTML dumps & runner logs
+# Local scratch / debug HTML dumps & runner logs (keep generated GitHub Pages dashboard)
 *.html
+!docs/index.html
 logs/
 .env
 .DS_Store
