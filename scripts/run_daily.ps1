@@ -38,6 +38,30 @@ function Write-Log {
     Add-Content -Path $LogFile -Value $line -Encoding UTF8
 }
 
+function Invoke-Native {
+    <# Run a native CLI (git, python/ub-prices) without PowerShell 5.1 treating stderr as a terminating error. #>
+    param(
+        [string]$Executable,
+        [string[]]$Arguments,
+        [string]$LogPrefix = ""
+    )
+    $prev = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $output = & $Executable @Arguments 2>&1
+        $code = $LASTEXITCODE
+        foreach ($item in $output) {
+            $txt = "$item"
+            if ($txt.Trim()) {
+                Write-Log ("{0}{1}" -f $LogPrefix, $txt)
+            }
+        }
+        return $code
+    } finally {
+        $ErrorActionPreference = $prev
+    }
+}
+
 # Win32 helpers for idle detection & S3 sleep (preserving wake timers!)
 Add-Type -TypeDefinition @"
 using System;
@@ -134,9 +158,9 @@ try {
 
     # 2. Sync latest state from GitHub (coordinates Home PC + Work Laptop cleanly)
     Write-Log "Syncing repository with origin/main..."
-    & git pull --rebase --autostash origin main 2>&1 | ForEach-Object { Write-Log "git: $_" }
-    if ($LASTEXITCODE -ne 0) {
-        Write-Log "WARNING: git pull returned exit code $LASTEXITCODE; continuing with local state."
+    $pullExit = Invoke-Native -Executable "git" -Arguments @("pull", "--rebase", "--autostash", "origin", "main") -LogPrefix "git: "
+    if ($pullExit -ne 0) {
+        Write-Log "WARNING: git pull returned exit code $pullExit; continuing with local state."
     }
 
     # 3. Idempotent guard: skip if another machine already completed a scan today
@@ -155,33 +179,32 @@ try {
     $scanArgs = @(
         "scan",
         "--source", "unegui",
-        "--max-pages", $MaxPages,
-        "--max-details", $MaxDetails,
-        "--min-delay", $MinDelay,
-        "--max-delay", $MaxDelay
+        "--max-pages", "$MaxPages",
+        "--max-details", "$MaxDetails",
+        "--min-delay", "$MinDelay",
+        "--max-delay", "$MaxDelay"
     )
     if ($DryRun) { $scanArgs += "--dry-run" }
 
     Write-Log ("Running: {0} {1}" -f $ubPricesExe, ($scanArgs -join " "))
-    & $ubPricesExe @scanArgs 2>&1 | ForEach-Object { Write-Log $_ }
-    $scanExit = $LASTEXITCODE
+    $scanExit = Invoke-Native -Executable $ubPricesExe -Arguments $scanArgs
     Write-Log "ub-prices scan exited with code $scanExit"
 
     if (-not $DryRun) {
         Write-Log "Building SQLite DB and daily digest..."
-        & $ubPricesExe build-db 2>&1 | ForEach-Object { Write-Log $_ }
-        & $ubPricesExe report --output reports/latest.md 2>&1 | ForEach-Object { Write-Log $_ }
+        [void](Invoke-Native -Executable $ubPricesExe -Arguments @("build-db"))
+        [void](Invoke-Native -Executable $ubPricesExe -Arguments @("report", "--output", "reports/latest.md"))
 
         # 5. Commit & push changes if any
-        & git add data/ reports/latest.md
-        & git diff --cached --quiet
-        if ($LASTEXITCODE -ne 0) {
+        [void](Invoke-Native -Executable "git" -Arguments @("add", "data/", "reports/latest.md") -LogPrefix "git: ")
+        $diffExit = Invoke-Native -Executable "git" -Arguments @("diff", "--cached", "--quiet")
+        if ($diffExit -ne 0) {
             $today = (Get-Date).ToString("yyyy-MM-dd")
             $hostTag = $env:COMPUTERNAME
-            & git commit -m "chore(data): daily UB property scan $today ($hostTag)" 2>&1 | ForEach-Object { Write-Log "git: $_" }
-            & git push origin main 2>&1 | ForEach-Object { Write-Log "git: $_" }
-            if ($LASTEXITCODE -ne 0) {
-                Write-Log "WARNING: git push failed (exit $LASTEXITCODE); local commit preserved."
+            [void](Invoke-Native -Executable "git" -Arguments @("commit", "-m", "chore(data): daily UB property scan $today ($hostTag)") -LogPrefix "git: ")
+            $pushExit = Invoke-Native -Executable "git" -Arguments @("push", "origin", "main") -LogPrefix "git: "
+            if ($pushExit -ne 0) {
+                Write-Log "WARNING: git push failed (exit $pushExit); local commit preserved."
             } else {
                 Write-Log "Pushed daily update to GitHub successfully."
             }
