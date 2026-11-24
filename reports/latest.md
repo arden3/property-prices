@@ -1,11 +1,11 @@
 # Ulaanbaatar Property Prices — Daily Digest
 
-_Generated: 2026-11-24 05:32 UTC · Scope: 12 Khan-Uul / Zaisan complexes · 3–5 өрөө (2–4 bed) · ≥ 60 m²_
+_Generated: 2026-11-24 06:13 UTC · Scope: 12 Khan-Uul / Zaisan complexes · 3–5 өрөө (2–4 bed) · ≥ 60 m²_
 
 ## Latest Scan Status
-- **Status:** `partial` · **Source:** `unegui` · **Run ID:** `2026-11-24_76eb81fe`
-- **Activity:** 106 requests · 821 matched ads · **+45 new** · **0 price changes** · **0 delisted**
-- **Notes:** `detail_cap_reached:48`
+- **Status:** `blocked` · **Source:** `unegui` · **Run ID:** `2026-11-24_44c08659`
+- **Activity:** 1 requests · 0 matched ads · **+0 new** · **0 price changes** · **0 delisted**
+- **Notes:** `blocked_index:Blocked or challenge page received (HTTP 403) for https://www.unegui.mn/l-hdlh/l-hdlh-zarna/oron-suuts-zarna/hanuul/?q=river+garden`
 - **Database Totals (Active):** 28 sale listings · 24 rent listings
 
 ## 12-Complex Market Snapshot (Deduplicated Active Units)

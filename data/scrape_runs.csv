@@ -1,3 +1,4 @@
 run_id,source,started_at,finished_at,status,is_full_scan,requests_made,index_cards_seen,matched_candidates,details_fetched,new_listings,price_changes,delisted_count,notes
 2026-11-24_9202845f,unegui,2026-11-24T05:07:49+00:00,2026-11-24T05:08:41+00:00,partial,false,12,240,113,8,8,0,0,detail_cap_reached:8
 2026-11-24_76eb81fe,unegui,2026-11-24T05:23:30+00:00,2026-11-24T05:31:22+00:00,partial,false,106,2821,821,48,45,0,0,detail_cap_reached:48
+2026-11-24_44c08659,unegui,2026-11-24T06:13:53+00:00,2026-11-24T06:13:53+00:00,blocked,true,1,0,0,0,0,0,0,blocked_index:Blocked or challenge page received (HTTP 403) for https://www.unegui.mn/l-hdlh/l-hdlh-zarna/oron-suuts-zarna/hanuul/?q=river+garden
