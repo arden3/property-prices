@@ -11,7 +11,7 @@ A personal, slow-and-steady tracker of **sale and long-term rental prices** acro
 - **Deal types:** Both Sale (`зарна`) and Long-Term Rent (`түрээслүүлнэ`)
 - **Rooms:** `3–5 өрөө` (Mongolian convention = 2–4 bedrooms + living room)
 - **Area:** `≥ 60 m²` (no upper limit)
-- **Exclusions:** Commercial/office spaces, standalone garages, short-term/daily rentals (`хоногийн түрээс`), and neighboring buildings advertised as "near X" (`хажууд`, `ойролцоо`, etc.)
+- **Exclusions:** Commercial/office spaces, standalone garages, short-term/daily rentals (`хоногийн түрээс`), and neighboring buildings advertised as "near X" (`хажууд`, `ойролцоо`, `-н урд`, etc.)
 
 ## Quick Start (Local)
 
@@ -23,17 +23,41 @@ pip install -e ".[dev]"
 # Test matching rules on any title
 ub-prices inspect-match "Ривер гарден 2 хотхонд 120мкв 4 өрөө байр зарна"
 
-# Run a small polite pilot scan (1 complex, 1 page)
-ub-prices scan --complex river-garden --max-pages 1 --max-details 15
-
-# Compile SQLite database & generate Markdown digest
-ub-prices build-db
-ub-prices report
+# Run the daily runner manually (syncs Git, skips if already ran today, scans, pushes)
+.\scripts\run_daily.ps1 -Force
 ```
+
+## Automated Daily Scanning (Home PC + Optional Work Laptop)
+
+Because `unegui.mn` sits behind Cloudflare WAF and returns `403` to cloud datacenter IPs (such as GitHub Actions' US Azure runners), daily scans run politely from your Mongolian residential/local connection and sync automatically via GitHub:
+
+### 1. Home PC (Wake from S3 Sleep → Scan → Back to Sleep)
+Install the daily Windows Scheduled Task (default **09:00 AM**):
+```powershell
+.\scripts\register_task.ps1 -RunAt "09:00"
+```
+- Before leaving for 7 days, put your PC to **Sleep** (not full Shutdown).
+- At 09:00 AM, Windows wakes the PC from S3 Standby, waits for network, pulls from GitHub, scans politely, pushes updated `data/` + `reports/latest.md`, and puts the PC back to S3 Sleep **only if you are idle / locked** (never sleeps while you're actively using it).
+- Logs are written to `logs/daily_scan.log` (git-ignored).
+- To change time or remove the task: `.\scripts\register_task.ps1 -RunAt "08:30"` or `.\scripts\register_task.ps1 -Unregister`.
+
+### 2. Optional Work Laptop Backup (Zero Conflicts)
+If you want to run from your work laptop while on site:
+```powershell
+git clone https://github.com/<you>/property-prices.git
+cd property-prices
+python -m venv .venv
+.\.venv\Scripts\pip install -e .
+.\scripts\run_daily.ps1
+```
+You can also register it on your laptop without sleep (`.\scripts\register_task.ps1 -RunAt "09:30" -NoSleepAfter`). Because `scripts/run_daily.ps1` pulls via `git pull --rebase` and checks `data/scrape_runs.csv` for today's UTC date, whichever machine runs first does the scan and the second machine skips cleanly with zero duplicate scans or Git conflicts.
+
+### 3. GitHub Actions CI & Downloadable SQLite Artifact
+Every push to `main` automatically runs `pytest`, prints `reports/latest.md` to the GitHub Actions Job Summary, and uploads a fresh `ub_prices.db` artifact (30-day retention).
 
 ## Analyzing the Database
 
-Canonical records are stored in Git-friendly text files (`data/listings.jsonl`, `data/price_history.csv`, `data/scrape_runs.csv`). Running `ub-prices build-db` compiles `data/ub_prices.db` with ready-to-query views:
+Canonical records are stored in Git-friendly text files (`data/listings.jsonl`, `data/price_history.csv`, `data/scrape_runs.csv`). Running `ub-prices build-db` compiles `data/ub_prices.db` with ready-to-query SQL views:
 
 - `v_active_deduped` — active non-anomaly listings deduplicated across multiple brokers by `(complex, deal_type, rooms, area, floor/total_floors)`
 - `v_sale_medians` & `v_rent_medians` — exact median asking prices per complex
@@ -49,14 +73,6 @@ FROM v_rent_vs_buy
 ORDER BY sale_median_sqm_mnt ASC;
 ```
 
-## GitHub Actions Automation
-
-Push this repository to a **private GitHub repo** and enable Actions:
-- `.github/workflows/daily_scan.yml` runs once daily at **09:00 AM UB time** (`01:00 UTC`), ~3–5 min/day (~100–150 min/month, well under the 2,000-minute free tier).
-- Each run posts the daily digest in the **GitHub Actions Job Summary**, updates `reports/latest.md`, commits `data/`, and uploads `ub_prices.db` as a 30-day downloadable artifact.
-- Because initial backfill caps new detail fetches at `120/run`, the first 2–3 runs gently backfill existing listings; subsequent daily runs only fetch brand-new or price-changed ads.
-- If `unegui.mn` ever blocks GitHub Actions datacenter IPs, the workflow saves partial progress, exits cleanly without bypassing challenges, and you can run the exact same `ub-prices scan` command on Windows Task Scheduler.
-
 ## Etiquette & `robots.txt` Compliance
 - Enforces every `Disallow` rule from `https://www.unegui.mn/robots.txt` (including `/api`, `/map/`, `/ru/`, `/en/`, and `*---*` compound filter URLs) before making any HTTP call.
-- Single-threaded, randomized 3–6s delays between requests, and incremental detail fetching.
+- Single-threaded, randomized 3.5–6.5s delays between requests, and incremental detail fetching.

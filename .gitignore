@@ -16,8 +16,9 @@ data/ub_prices.db-journal
 data/ub_prices.db-wal
 data/ub_prices.db-shm
 
-# Local scratch / debug HTML dumps
+# Local scratch / debug HTML dumps & runner logs
 *.html
+logs/
 .env
 .DS_Store
 Thumbs.db
