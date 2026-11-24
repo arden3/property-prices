@@ -8,11 +8,14 @@ import sys
 from pathlib import Path
 
 from ub_prices.config import load_config
+from ub_prices.dashboard import generate_dashboard
 from ub_prices.matching import ComplexMatcher
 from ub_prices.models import DealType
+from ub_prices.normalize import enrich_listing_record
 from ub_prices.report import generate_report
 from ub_prices.scanner import run_scan
 from ub_prices.storage.sqlite_builder import build_sqlite_db
+from ub_prices.storage.store import CanonicalStore
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -48,27 +51,45 @@ def _build_parser() -> argparse.ArgumentParser:
         action="append",
         help="Limit scan to specific complex slug (can be repeated)",
     )
-    p_scan.add_argument("--max-pages", type=int, default=3, help="Max pages per search query")
+    p_scan.add_argument("--max-pages", type=int, default=6, help="Max pages per search query")
     p_scan.add_argument(
         "--max-details",
         type=int,
         default=120,
         help="Max new/changed detail pages to fetch per run (0 = unlimited)",
     )
-    p_scan.add_argument("--min-delay", type=float, default=3.0, help="Min polite delay (seconds)")
-    p_scan.add_argument("--max-delay", type=float, default=6.0, help="Max polite delay (seconds)")
+    p_scan.add_argument("--min-delay", type=float, default=3.5, help="Min polite delay (seconds)")
+    p_scan.add_argument("--max-delay", type=float, default=6.5, help="Max polite delay (seconds)")
     p_scan.add_argument("--dry-run", action="store_true", help="Scan without writing data files")
 
     # build-db
     p_db = sub.add_parser("build-db", help="Compile canonical JSONL/CSV files into SQLite DB")
     p_db.add_argument("--db-path", type=Path, default=None, help="Output SQLite file path")
 
+    # re-enrich
+    sub.add_parser(
+        "re-enrich",
+        help="Recompute derived fields (fingerprints, window facing, parking, start_price) on existing listings",
+    )
+
     # report
-    p_rep = sub.add_parser("report", help="Generate Markdown daily digest report")
+    p_rep = sub.add_parser("report", help="Generate Markdown daily digest and HTML dashboard")
     p_rep.add_argument(
         "--output", type=Path, default=Path("reports/latest.md"), help="Output Markdown path"
     )
+    p_rep.add_argument(
+        "--dashboard",
+        type=Path,
+        default=Path("docs/index.html"),
+        help="Output HTML dashboard path (set to empty string to skip)",
+    )
     p_rep.add_argument("--lookback-hours", type=int, default=24)
+
+    # dashboard
+    p_dash = sub.add_parser("dashboard", help="Generate interactive HTML dashboard only")
+    p_dash.add_argument(
+        "--output", type=Path, default=Path("docs/index.html"), help="Output HTML path"
+    )
 
     # inspect-match
     p_match = sub.add_parser("inspect-match", help="Test complex matching on a sample title/text")
@@ -118,20 +139,50 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Notes: {run.notes}")
         return 0 if run.status in ("ok", "partial", "dry_run") else 2
 
+    if args.command == "re-enrich":
+        store = CanonicalStore(args.data_dir)
+        listings = store.load_listings()
+        for rec in listings.values():
+            enrich_listing_record(rec)
+        store.save_listings(listings)
+        db_path = build_sqlite_db(args.data_dir)
+        print(f"Re-enriched {len(listings)} listings and rebuilt {db_path}")
+        return 0
+
     if args.command == "build-db":
         db_path = build_sqlite_db(args.data_dir, args.db_path)
         print(f"SQLite database built: {db_path}")
         return 0
 
     if args.command == "report":
-        build_sqlite_db(args.data_dir)
+        db_path = build_sqlite_db(args.data_dir)
         generate_report(
             config=cfg,
             data_dir=args.data_dir,
             output_path=args.output,
+            db_path=db_path,
             lookback_hours=args.lookback_hours,
         )
         print(f"Report written: {args.output}")
+        if args.dashboard and str(args.dashboard).strip():
+            dash = generate_dashboard(
+                config=cfg,
+                data_dir=args.data_dir,
+                output_path=args.dashboard,
+                db_path=db_path,
+            )
+            print(f"Dashboard written: {dash}")
+        return 0
+
+    if args.command == "dashboard":
+        db_path = build_sqlite_db(args.data_dir)
+        dash = generate_dashboard(
+            config=cfg,
+            data_dir=args.data_dir,
+            output_path=args.output,
+            db_path=db_path,
+        )
+        print(f"Dashboard written: {dash}")
         return 0
 
     if args.command == "inspect-match":

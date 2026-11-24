@@ -27,14 +27,22 @@ CREATE TABLE listings (
     area_sqm REAL,
     floor INTEGER,
     total_floors INTEGER,
+    floor_tier TEXT,
     year_built INTEGER,
     balcony TEXT,
     garage TEXT,
+    parking_status TEXT,
     window_count INTEGER,
+    window_facing TEXT,
+    faces_south INTEGER NOT NULL DEFAULT 0,
+    faces_west INTEGER NOT NULL DEFAULT 0,
+    faces_east INTEGER NOT NULL DEFAULT 0,
+    faces_north INTEGER NOT NULL DEFAULT 0,
     payment_terms TEXT,
     furnished TEXT,
     raw_price_text TEXT,
     start_price_text TEXT,
+    start_price_mnt INTEGER,
     currency TEXT,
     price_basis TEXT,
     total_price_mnt INTEGER,
@@ -90,21 +98,48 @@ CREATE INDEX idx_listings_complex_deal ON listings (complex_slug, deal_type, is_
 CREATE INDEX idx_listings_fingerprint ON listings (unit_fingerprint);
 CREATE INDEX idx_price_history_key ON price_history (source, external_id, observed_at);
 
--- Deduplicate active, non-anomaly broker reposts by unit_fingerprint
--- Keeps lowest asking price per unit, breaking ties by freshest last_seen_at.
+-- Deduplicate active, non-anomaly multi-realtor ads by unit_fingerprint.
+-- Picks lowest asking price per unit, breaking ties by richest metadata (orientation/parking)
+-- and freshest last_seen_at. Aggregates broker ad count and URLs across duplicates.
 CREATE VIEW v_active_deduped AS
-WITH ranked AS (
+WITH fp_stats AS (
+    SELECT
+        unit_fingerprint,
+        COUNT(*) AS duplicate_listing_count,
+        GROUP_CONCAT(url, ' | ') AS duplicate_urls,
+        MAX(faces_south) AS any_south,
+        MAX(faces_west) AS any_west,
+        MAX(faces_east) AS any_east,
+        MAX(faces_north) AS any_north,
+        MAX(CASE WHEN parking_status = 'included' THEN 2 WHEN parking_status = 'available' THEN 1 ELSE 0 END) AS best_parking_rank,
+        MAX(start_price_mnt) AS max_start_price_mnt
+    FROM listings
+    WHERE is_active = 1
+      AND price_anomaly = 0
+      AND total_price_mnt IS NOT NULL
+    GROUP BY unit_fingerprint
+),
+ranked AS (
     SELECT
         l.*,
+        s.duplicate_listing_count,
+        s.duplicate_urls,
+        s.any_south,
+        s.any_west,
+        s.any_east,
+        s.any_north,
+        s.best_parking_rank,
+        COALESCE(l.start_price_mnt, s.max_start_price_mnt) AS effective_start_price_mnt,
         ROW_NUMBER() OVER (
             PARTITION BY l.unit_fingerprint
             ORDER BY
-                CASE WHEN l.total_price_mnt IS NULL THEN 1 ELSE 0 END,
                 l.total_price_mnt ASC,
+                (CASE WHEN l.window_facing != '' THEN 1 ELSE 0 END) DESC,
+                (CASE WHEN l.parking_status IN ('included', 'available') THEN 1 ELSE 0 END) DESC,
                 l.last_seen_at DESC
-        ) AS rn,
-        COUNT(*) OVER (PARTITION BY l.unit_fingerprint) AS duplicate_listing_count
+        ) AS rn
     FROM listings l
+    JOIN fp_stats s ON s.unit_fingerprint = l.unit_fingerprint
     WHERE l.is_active = 1
       AND l.price_anomaly = 0
       AND l.total_price_mnt IS NOT NULL
@@ -230,7 +265,7 @@ LEFT JOIN v_sale_medians s ON s.complex_slug = c.complex_slug
 LEFT JOIN v_rent_medians r ON r.complex_slug = c.complex_slug
 ORDER BY c.complex_slug;
 
--- Active listings whose asking price has dropped since first seen
+-- Tracked price drops observed across daily scans
 CREATE VIEW v_price_drops AS
 WITH first_obs AS (
     SELECT
@@ -265,6 +300,118 @@ WHERE l.is_active = 1
   AND l.total_price_mnt IS NOT NULL
   AND l.total_price_mnt < f.first_price_mnt
 ORDER BY drop_pct DESC, drop_mnt DESC;
+
+-- Retroactive price cuts already marked by sellers via Unegui's start_price (deduplicated)
+CREATE VIEW v_seller_price_cuts AS
+SELECT
+    d.source,
+    d.external_id,
+    d.deal_type,
+    d.complex_slug,
+    d.complex_name,
+    d.rooms,
+    d.area_sqm,
+    d.floor,
+    d.total_floors,
+    d.effective_start_price_mnt AS start_price_mnt,
+    d.total_price_mnt AS current_price_mnt,
+    (d.effective_start_price_mnt - d.total_price_mnt) AS cut_mnt,
+    ROUND(((d.effective_start_price_mnt - d.total_price_mnt) * 100.0) / d.effective_start_price_mnt, 2) AS cut_pct,
+    d.duplicate_listing_count,
+    d.url,
+    d.title
+FROM v_active_deduped d
+WHERE d.effective_start_price_mnt IS NOT NULL
+  AND d.effective_start_price_mnt > d.total_price_mnt
+ORDER BY cut_pct DESC, cut_mnt DESC;
+
+-- Family Shortlist View (deduplicated 1-per-unit):
+-- Scores South (+2) + West (+1) windows, interior parking (included +2 / available +1),
+-- and higher floor tier (+1). Ignores mortgage completely. Max score = 6.
+CREATE VIEW v_family_shortlist AS
+WITH first_obs AS (
+    SELECT
+        source,
+        external_id,
+        total_price_mnt AS first_price_mnt,
+        ROW_NUMBER() OVER (PARTITION BY source, external_id ORDER BY observed_at ASC, id ASC) AS rn
+    FROM price_history
+    WHERE price_anomaly = 0 AND total_price_mnt IS NOT NULL
+),
+scored AS (
+    SELECT
+        d.source,
+        d.external_id,
+        d.url,
+        d.deal_type,
+        d.complex_slug,
+        d.complex_name,
+        d.zone,
+        d.title,
+        d.rooms,
+        d.area_sqm,
+        d.floor,
+        d.total_floors,
+        d.floor_tier,
+        d.year_built,
+        CASE
+            WHEN d.window_facing != '' THEN d.window_facing
+            ELSE trim(
+                (CASE WHEN d.any_south = 1 THEN 'South, ' ELSE '' END) ||
+                (CASE WHEN d.any_west = 1 THEN 'West, ' ELSE '' END) ||
+                (CASE WHEN d.any_east = 1 THEN 'East, ' ELSE '' END) ||
+                (CASE WHEN d.any_north = 1 THEN 'North, ' ELSE '' END),
+                ', '
+            )
+        END AS window_facing,
+        d.any_south AS faces_south,
+        d.any_west AS faces_west,
+        CASE
+            WHEN d.best_parking_rank = 2 THEN 'included'
+            WHEN d.best_parking_rank = 1 THEN 'available'
+            ELSE d.parking_status
+        END AS parking_status,
+        d.payment_terms,
+        d.furnished,
+        d.raw_price_text,
+        d.start_price_text,
+        d.effective_start_price_mnt AS start_price_mnt,
+        d.total_price_mnt,
+        d.price_per_sqm_mnt,
+        d.price_basis,
+        CASE
+            WHEN d.effective_start_price_mnt IS NOT NULL AND d.effective_start_price_mnt > d.total_price_mnt
+            THEN ROUND(((d.effective_start_price_mnt - d.total_price_mnt) * 100.0) / d.effective_start_price_mnt, 2)
+            ELSE 0.0
+        END AS seller_cut_pct,
+        CASE
+            WHEN f.first_price_mnt IS NOT NULL AND f.first_price_mnt > d.total_price_mnt
+            THEN ROUND(((f.first_price_mnt - d.total_price_mnt) * 100.0) / f.first_price_mnt, 2)
+            ELSE 0.0
+        END AS tracked_drop_pct,
+        (
+            (CASE WHEN d.any_south = 1 THEN 2 ELSE 0 END) +
+            (CASE WHEN d.any_west = 1 THEN 1 ELSE 0 END) +
+            d.best_parking_rank +
+            (CASE WHEN d.floor_tier = 'high' THEN 1 ELSE 0 END)
+        ) AS family_score,
+        d.duplicate_listing_count,
+        d.duplicate_urls,
+        d.unit_fingerprint,
+        d.first_seen_at,
+        d.last_seen_at,
+        d.published_label
+    FROM v_active_deduped d
+    LEFT JOIN first_obs f
+      ON f.source = d.source AND f.external_id = d.external_id AND f.rn = 1
+)
+SELECT
+    s.*,
+    CASE
+        WHEN s.seller_cut_pct >= s.tracked_drop_pct THEN s.seller_cut_pct
+        ELSE s.tracked_drop_pct
+    END AS effective_drop_pct
+FROM scored s;
 """
 
 
@@ -290,14 +437,16 @@ def build_sqlite_db(data_dir: Path, db_path: Path | None = None) -> Path:
             INSERT INTO listings (
                 source, external_id, url, deal_type, complex_slug, complex_name, zone,
                 match_confidence, match_reason, title, district, location_text, lat, lng,
-                rooms, area_sqm, floor, total_floors, year_built, balcony, garage, window_count,
-                payment_terms, furnished, raw_price_text, start_price_text, currency,
+                rooms, area_sqm, floor, total_floors, floor_tier, year_built, balcony,
+                garage, parking_status, window_count, window_facing, faces_south,
+                faces_west, faces_east, faces_north, payment_terms, furnished,
+                raw_price_text, start_price_text, start_price_mnt, currency,
                 price_basis, total_price_mnt, price_per_sqm_mnt, price_anomaly,
                 price_anomaly_reason, unit_fingerprint, seller_id, seller_name, is_business,
                 published_label, description, first_seen_at, last_seen_at, missed_scans, is_active
             ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             """,
             [
@@ -305,11 +454,13 @@ def build_sqlite_db(data_dir: Path, db_path: Path | None = None) -> Path:
                     r.source, r.external_id, r.url, r.deal_type.value, r.complex_slug,
                     r.complex_name, r.zone, r.match_confidence, r.match_reason, r.title,
                     r.district, r.location_text, r.lat, r.lng, r.rooms, r.area_sqm,
-                    r.floor, r.total_floors, r.year_built, r.balcony, r.garage, r.window_count,
+                    r.floor, r.total_floors, r.floor_tier, r.year_built, r.balcony,
+                    r.garage, r.parking_status, r.window_count, r.window_facing,
+                    int(r.faces_south), int(r.faces_west), int(r.faces_east), int(r.faces_north),
                     r.payment_terms, r.furnished, r.raw_price_text, r.start_price_text,
-                    r.currency, r.price_basis.value, r.total_price_mnt, r.price_per_sqm_mnt,
-                    int(r.price_anomaly), r.price_anomaly_reason, r.unit_fingerprint,
-                    r.seller_id, r.seller_name,
+                    r.start_price_mnt, r.currency, r.price_basis.value, r.total_price_mnt,
+                    r.price_per_sqm_mnt, int(r.price_anomaly), r.price_anomaly_reason,
+                    r.unit_fingerprint, r.seller_id, r.seller_name,
                     None if r.is_business is None else int(r.is_business),
                     r.published_label, r.description, r.first_seen_at, r.last_seen_at,
                     r.missed_scans, int(r.is_active),

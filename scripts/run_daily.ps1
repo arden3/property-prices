@@ -11,7 +11,7 @@
 #>
 [CmdletBinding()]
 param(
-    [int]$MaxPages = 3,
+    [int]$MaxPages = 6,
     [int]$MaxDetails = 120,
     [double]$MinDelay = 3.5,
     [double]$MaxDelay = 6.5,
@@ -48,15 +48,13 @@ function Invoke-Native {
     $prev = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
     try {
-        $output = & $Executable @Arguments 2>&1
-        $code = $LASTEXITCODE
-        foreach ($item in $output) {
-            $txt = "$item"
+        & $Executable @Arguments 2>&1 | ForEach-Object {
+            $txt = "$_"
             if ($txt.Trim()) {
                 Write-Log ("{0}{1}" -f $LogPrefix, $txt)
             }
         }
-        return $code
+        return $LASTEXITCODE
     } finally {
         $ErrorActionPreference = $prev
     }
@@ -191,12 +189,12 @@ try {
     Write-Log "ub-prices scan exited with code $scanExit"
 
     if (-not $DryRun) {
-        Write-Log "Building SQLite DB and daily digest..."
+        Write-Log "Building SQLite DB, daily digest, and interactive dashboard..."
         [void](Invoke-Native -Executable $ubPricesExe -Arguments @("build-db"))
-        [void](Invoke-Native -Executable $ubPricesExe -Arguments @("report", "--output", "reports/latest.md"))
+        [void](Invoke-Native -Executable $ubPricesExe -Arguments @("report", "--output", "reports/latest.md", "--dashboard", "docs/index.html"))
 
         # 5. Commit & push changes if any
-        [void](Invoke-Native -Executable "git" -Arguments @("add", "data/", "reports/latest.md") -LogPrefix "git: ")
+        [void](Invoke-Native -Executable "git" -Arguments @("add", "data/", "reports/latest.md", "docs/index.html") -LogPrefix "git: ")
         $diffExit = Invoke-Native -Executable "git" -Arguments @("diff", "--cached", "--quiet")
         if ($diffExit -ne 0) {
             $today = (Get-Date).ToString("yyyy-MM-dd")

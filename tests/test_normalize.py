@@ -5,12 +5,16 @@ import pytest
 from ub_prices.config import FilterConfig
 from ub_prices.models import DealType, PriceBasis
 from ub_prices.normalize import (
+    compute_floor_tier,
     compute_unit_fingerprint,
     normalize_price,
     parse_area_sqm,
     parse_furnished,
+    parse_parking_status,
     parse_rent_terms,
     parse_rooms,
+    parse_start_price_mnt,
+    parse_window_orientation,
     passes_listing_filters,
 )
 
@@ -91,6 +95,40 @@ def test_rent_price_and_terms_parsing():
 
 
 def test_unit_fingerprint_clusters_broker_duplicates():
-    fp1 = compute_unit_fingerprint("river-garden", DealType.SALE, 4, 120.1, 6, 15)
-    fp2 = compute_unit_fingerprint("river-garden", DealType.SALE, 4, 119.8, 6, 15)
-    assert fp1 == fp2 == "river-garden|sale|4r|120sqm|6/15"
+    # Brokers frequently disagree on total_floors (15 vs 16) and round 117.5 m² to 117 vs 118
+    fp1 = compute_unit_fingerprint("river-garden", DealType.SALE, 4, 117.0, 6, 15)
+    fp2 = compute_unit_fingerprint("river-garden", DealType.SALE, 4, 118.0, 6, 16)
+    assert fp1 == fp2 == "river-garden|sale|4r|118sqm|f6"
+
+
+def test_window_orientation_south_west_and_ignores_location_phrases():
+    wf, s, w, e, n = parse_window_orientation(
+        "River Garden 3 өрөө",
+        "ХУД, Маршалын гүүрний зүүн талд байрлалтай\n- Баруун болон урагшаа харсан цонхтой",
+    )
+    assert wf == "South, West"
+    assert (s, w, e, n) == (True, True, False, False)
+
+    # Pure geography without window mention should NOT trigger West
+    wf2, s2, w2, e2, n2 = parse_window_orientation(
+        "Маршалын гүүрний баруун талд River Garden 4 өрөө",
+        "Гэрчилгээ бэлэн",
+    )
+    assert wf2 == ""
+    assert (s2, w2, e2, n2) == (False, False, False, False)
+
+
+def test_parking_floor_tier_and_start_price():
+    assert parse_parking_status("Байгаа", "", "") == "included"
+    assert parse_parking_status("Байхгүй", "River Garden дулаан зогсоолтой", "") == "included"
+    assert parse_parking_status("Байхгүй", "", "Дулаан зогсоол тусдаа үнэтэй 70 сая") == "available"
+    assert parse_parking_status("Байхгүй", "", "Цэвэрхэн байр") == "none"
+
+    assert compute_floor_tier(5, 6) == "high"
+    assert compute_floor_tier(12, 16) == "high"
+    assert compute_floor_tier(2, 16) == "low"
+    assert compute_floor_tier(5, 16) == "mid"
+
+    assert parse_start_price_mnt(DealType.SALE, "880,000,000 ₮", "MNT", 117.0, 830_000_000) == 880_000_000
+    assert parse_start_price_mnt(DealType.SALE, "800,000,000 ₮", "MNT", 117.0, 830_000_000) is None
+    assert parse_start_price_mnt(DealType.RENT, "6,500,000 ₮", "MNT", 149.0, 5_200_000) == 6_500_000

@@ -4,6 +4,7 @@ import sqlite3
 from pathlib import Path
 
 from ub_prices.config import load_config
+from ub_prices.dashboard import generate_dashboard
 from ub_prices.models import DealType, IndexCard, ListingDetail
 from ub_prices.report import generate_report
 from ub_prices.scanner import run_scan
@@ -91,11 +92,13 @@ def test_full_lifecycle_scan_price_drop_delisting_and_views(tmp_path: Path):
             url="https://www.unegui.mn/adv/1001/",
             deal_type=DealType.SALE,
             title=sale_card_1.title,
+            description="Урагшаа болон баруун харсан цонхтой, дулаан зогсоолтой",
             location_text="Улаанбаатар — Хан-Уул — River Garden",
             rubric_slug="4-r",
             raw_price_text="960 сая ₮",
+            start_price_text="1,050,000,000 ₮",
             price_without_currency="960000000",
-            features={"Талбай": "120 м²", "Хэдэн давхарт": "5", "Барилгын давхар": "9"},
+            features={"Талбай": "120 м²", "Хэдэн давхарт": "6", "Барилгын давхар": "9", "Гараж": "Байгаа"},
         ),
         "1002": ListingDetail(
             source="unegui",
@@ -107,7 +110,7 @@ def test_full_lifecycle_scan_price_drop_delisting_and_views(tmp_path: Path):
             rubric_slug="4-r",
             raw_price_text="980 сая ₮",
             price_without_currency="980000000",
-            features={"Талбай": "120 м²", "Хэдэн давхарт": "5", "Барилгын давхар": "9"},
+            features={"Талбай": "120 м²", "Хэдэн давхарт": "6", "Барилгын давхар": "10"},
         ),
         "1003": ListingDetail(
             source="unegui",
@@ -198,12 +201,33 @@ def test_full_lifecycle_scan_price_drop_delisting_and_views(tmp_path: Path):
         assert drops[0]["first_price_mnt"] == 960_000_000
         assert drops[0]["current_price_mnt"] == 900_000_000
         assert drops[0]["drop_pct"] == 6.25
+
+        cuts = conn.execute("SELECT * FROM v_seller_price_cuts").fetchall()
+        assert len(cuts) == 1
+        assert cuts[0]["start_price_mnt"] == 1_050_000_000
+
+        shortlist = conn.execute(
+            "SELECT * FROM v_family_shortlist WHERE external_id = '1001'"
+        ).fetchone()
+        assert shortlist is not None
+        assert shortlist["faces_south"] == 1
+        assert shortlist["faces_west"] == 1
+        assert shortlist["parking_status"] == "included"
+        assert shortlist["floor_tier"] == "high"
+        assert shortlist["family_score"] == 6
     finally:
         conn.close()
 
-    # --- Verify Markdown Report ---
+    # --- Verify Markdown Report & Interactive HTML Dashboard ---
     md = generate_report(cfg, data_dir, report_path, db_path=db_path)
     assert "# Ulaanbaatar Property Prices — Daily Digest" in md
     assert "River Garden" in md
-    assert "-6.2%" in md or "-6.3%" in md
+    assert "Family Shortlist Top Matches" in md
     assert "8.00%" in md
+
+    dash_path = tmp_path / "docs" / "index.html"
+    generate_dashboard(cfg, data_dir, dash_path, db_path=db_path)
+    html = dash_path.read_text(encoding="utf-8")
+    assert "Ulaanbaatar Family Property Tracker" in html
+    assert "River Garden" in html
+    assert "South, West" in html

@@ -33,12 +33,19 @@ def _fmt_area(val: Optional[float]) -> str:
     return f"{val:.1f} m²"
 
 
-def _fmt_floor(floor: Optional[int], total: Optional[int]) -> str:
+def _fmt_floor(floor: Optional[int], total: Optional[int], tier: str = "") -> str:
     if floor is None:
         return "—"
-    if total is None:
-        return f"{floor}F"
-    return f"{floor}/{total}F"
+    base = f"{floor}F" if total is None else f"{floor}/{total}F"
+    return f"{base} (high)" if tier == "high" else base
+
+
+def _fmt_parking(status: str) -> str:
+    return {
+        "included": "Incl.",
+        "available": "Avail.",
+        "none": "No",
+    }.get(status or "", "—")
 
 
 def generate_report(
@@ -48,7 +55,7 @@ def generate_report(
     db_path: Optional[Path] = None,
     lookback_hours: int = 24,
 ) -> str:
-    """Build SQLite DB (if needed) and generate a clean family-friendly Markdown digest."""
+    """Build SQLite DB (if needed) and generate a deduplicated family-focused Markdown digest."""
     target_db = db_path or (data_dir / "ub_prices.db")
     if not target_db.exists():
         build_sqlite_db(data_dir, target_db)
@@ -64,13 +71,31 @@ def generate_report(
             datetime.now(timezone.utc) - timedelta(hours=lookback_hours)
         ).replace(microsecond=0).isoformat()
 
+        # Family shortlist top picks (South + West, Interior Parking, Higher Floor)
+        shortlist_rent = conn.execute(
+            """
+            SELECT * FROM v_family_shortlist
+            WHERE deal_type = 'rent' AND family_score >= 3
+            ORDER BY family_score DESC, total_price_mnt ASC
+            LIMIT 15
+            """
+        ).fetchall()
+
+        shortlist_sale = conn.execute(
+            """
+            SELECT * FROM v_family_shortlist
+            WHERE deal_type = 'sale' AND family_score >= 3
+            ORDER BY family_score DESC, price_per_sqm_mnt ASC
+            LIMIT 15
+            """
+        ).fetchall()
+
+        # Deduplicated new listings in lookback window
         new_rent = conn.execute(
             """
-            SELECT complex_name, rooms, area_sqm, floor, total_floors, total_price_mnt,
-                   payment_terms, furnished, url, title
-            FROM listings
-            WHERE is_active = 1 AND deal_type = 'rent' AND first_seen_at >= ?
-            ORDER BY complex_name, total_price_mnt ASC
+            SELECT * FROM v_family_shortlist
+            WHERE deal_type = 'rent' AND first_seen_at >= ?
+            ORDER BY family_score DESC, complex_name, total_price_mnt ASC
             LIMIT 40
             """,
             (cutoff_iso,),
@@ -78,18 +103,22 @@ def generate_report(
 
         new_sale = conn.execute(
             """
-            SELECT complex_name, rooms, area_sqm, floor, total_floors, total_price_mnt,
-                   price_per_sqm_mnt, price_anomaly, url, title
-            FROM listings
-            WHERE is_active = 1 AND deal_type = 'sale' AND first_seen_at >= ?
-            ORDER BY complex_name, price_per_sqm_mnt ASC
+            SELECT * FROM v_family_shortlist
+            WHERE deal_type = 'sale' AND first_seen_at >= ?
+            ORDER BY family_score DESC, complex_name, price_per_sqm_mnt ASC
             LIMIT 40
             """,
             (cutoff_iso,),
         ).fetchall()
 
-        drops = conn.execute(
-            "SELECT * FROM v_price_drops LIMIT 20"
+        # Combined price cuts (both tracked daily drops and Unegui start_price cuts)
+        price_cuts = conn.execute(
+            """
+            SELECT * FROM v_family_shortlist
+            WHERE effective_drop_pct > 0
+            ORDER BY effective_drop_pct DESC, total_price_mnt ASC
+            LIMIT 25
+            """
         ).fetchall()
 
         rvb_rows = {
@@ -100,11 +129,17 @@ def generate_report(
         sale_by_rooms = conn.execute("SELECT * FROM v_sale_by_rooms").fetchall()
         rent_by_rooms = conn.execute("SELECT * FROM v_rent_by_rooms").fetchall()
 
-        total_active_sale = conn.execute(
+        raw_sale = conn.execute(
             "SELECT COUNT(*) FROM listings WHERE is_active = 1 AND deal_type = 'sale'"
         ).fetchone()[0]
-        total_active_rent = conn.execute(
+        raw_rent = conn.execute(
             "SELECT COUNT(*) FROM listings WHERE is_active = 1 AND deal_type = 'rent'"
+        ).fetchone()[0]
+        dedup_sale = conn.execute(
+            "SELECT COUNT(*) FROM v_active_deduped WHERE deal_type = 'sale'"
+        ).fetchone()[0]
+        dedup_rent = conn.execute(
+            "SELECT COUNT(*) FROM v_active_deduped WHERE deal_type = 'rent'"
         ).fetchone()[0]
     finally:
         conn.close()
@@ -113,7 +148,9 @@ def generate_report(
     generated_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines.append("# Ulaanbaatar Property Prices — Daily Digest")
     lines.append("")
-    lines.append(f"_Generated: {generated_at} · Scope: 12 Khan-Uul / Zaisan complexes · 3–5 өрөө (2–4 bed) · ≥ 60 m²_")
+    lines.append(
+        f"_Generated: {generated_at} · Scope: 12 Khan-Uul / Zaisan complexes · 3–5 өрөө (2–4 bed) · ≥ 60 m²_"
+    )
     lines.append("")
 
     # 1. Scan Health
@@ -135,7 +172,8 @@ def generate_report(
     else:
         lines.append("- No scans recorded yet.")
     lines.append(
-        f"- **Database Totals (Active):** {total_active_sale} sale listings · {total_active_rent} rent listings"
+        f"- **Active Inventory:** **{dedup_sale} unique sale units** ({raw_sale} broker ads) · "
+        f"**{dedup_rent} unique rent units** ({raw_rent} broker ads)"
     )
     lines.append("")
 
@@ -163,61 +201,95 @@ def generate_report(
             lines.append(f"| **{comp.name}** | {comp.zone} | 0 | — | — | 0 | — | — | — |")
     lines.append("")
 
-    # 3. New Rental Listings
-    lines.append(f"## New Rental Listings (Last {lookback_hours}h)")
+    # 3. Family Shortlist Top Matches (South + West, Interior Parking, Higher Floor)
+    lines.append("## Family Shortlist Top Matches (South/West · Parking · Higher Floor)")
+    lines.append("")
+    if shortlist_rent:
+        lines.append("### Top Rent Matches")
+        lines.append("| Score | Complex | Rooms | Area | Floor | Windows | Parking | Rent/mo | Terms | Ads | Link |")
+        lines.append("| :---: | :--- | ---: | ---: | :--- | :--- | :--- | ---: | :--- | ---: | :--- |")
+        for r in shortlist_rent:
+            lines.append(
+                f"| {r['family_score']}/6 | {r['complex_name']} | {r['rooms']} өрөө | "
+                f"{_fmt_area(r['area_sqm'])} | {_fmt_floor(r['floor'], r['total_floors'], r['floor_tier'])} | "
+                f"{r['window_facing'] or '—'} | {_fmt_parking(r['parking_status'])} | "
+                f"{_fmt_mnt_millions(r['total_price_mnt'])} | {r['payment_terms'] or '—'} | "
+                f"{r['duplicate_listing_count']}x | [View]({r['url']}) |"
+            )
+        lines.append("")
+    if shortlist_sale:
+        lines.append("### Top Sale Matches")
+        lines.append("| Score | Complex | Rooms | Area | Floor | Windows | Parking | Total Price | ₮/m² | Ads | Link |")
+        lines.append("| :---: | :--- | ---: | ---: | :--- | :--- | :--- | ---: | ---: | ---: | :--- |")
+        for r in shortlist_sale:
+            lines.append(
+                f"| {r['family_score']}/6 | {r['complex_name']} | {r['rooms']} өрөө | "
+                f"{_fmt_area(r['area_sqm'])} | {_fmt_floor(r['floor'], r['total_floors'], r['floor_tier'])} | "
+                f"{r['window_facing'] or '—'} | {_fmt_parking(r['parking_status'])} | "
+                f"{_fmt_mnt_millions(r['total_price_mnt'])} | {_fmt_sqm_mnt(r['price_per_sqm_mnt'])} | "
+                f"{r['duplicate_listing_count']}x | [View]({r['url']}) |"
+            )
+        lines.append("")
+    if not shortlist_rent and not shortlist_sale:
+        lines.append("_No high-scoring shortlist matches yet._")
+        lines.append("")
+
+    # 4. Active Price Cuts (Tracked + Unegui start_price)
+    lines.append("## Active Price Cuts (Tracked Drops & Seller Start-Price Reductions)")
+    lines.append("")
+    if price_cuts:
+        lines.append("| Deal | Complex | Rooms | Area | Floor | Original | Current | Cut | Ads | Link |")
+        lines.append("| :--- | :--- | ---: | ---: | :--- | ---: | ---: | ---: | ---: | :--- |")
+        for c in price_cuts:
+            orig = c["start_price_mnt"]
+            if orig is None and c["effective_drop_pct"]:
+                orig = int(round(c["total_price_mnt"] / (1.0 - c["effective_drop_pct"] / 100.0)))
+            lines.append(
+                f"| {c['deal_type']} | {c['complex_name']} | {c['rooms']} өрөө | "
+                f"{_fmt_area(c['area_sqm'])} | {_fmt_floor(c['floor'], c['total_floors'])} | "
+                f"{_fmt_mnt_millions(orig)} | {_fmt_mnt_millions(c['total_price_mnt'])} | "
+                f"-{c['effective_drop_pct']:.1f}% | {c['duplicate_listing_count']}x | [View]({c['url']}) |"
+            )
+    else:
+        lines.append("_No active price cuts recorded yet._")
+    lines.append("")
+
+    # 5. Deduplicated New Listings (Last 24h)
+    lines.append(f"## New Unique Rental Listings (Last {lookback_hours}h)")
     lines.append("")
     if new_rent:
-        lines.append("| Complex | Rooms | Area | Floor | Rent/mo | Terms | Furnished | Link |")
-        lines.append("| :--- | ---: | ---: | ---: | ---: | :--- | :--- | :--- |")
+        lines.append("| Complex | Rooms | Area | Floor | Windows | Parking | Rent/mo | Terms | Ads | Link |")
+        lines.append("| :--- | ---: | ---: | :--- | :--- | :--- | ---: | :--- | ---: | :--- |")
         for r in new_rent:
             lines.append(
                 f"| {r['complex_name']} | {r['rooms']} өрөө | {_fmt_area(r['area_sqm'])} | "
-                f"{_fmt_floor(r['floor'], r['total_floors'])} | "
-                f"{_fmt_mnt_millions(r['total_price_mnt'])} | "
-                f"{r['payment_terms'] or '—'} | {r['furnished'] or '—'} | "
-                f"[View]({r['url']}) |"
+                f"{_fmt_floor(r['floor'], r['total_floors'], r['floor_tier'])} | "
+                f"{r['window_facing'] or '—'} | {_fmt_parking(r['parking_status'])} | "
+                f"{_fmt_mnt_millions(r['total_price_mnt'])} | {r['payment_terms'] or '—'} | "
+                f"{r['duplicate_listing_count']}x | [View]({r['url']}) |"
             )
     else:
         lines.append("_No new rental listings in this window._")
     lines.append("")
 
-    # 4. New Sale Listings
-    lines.append(f"## New Sale Listings (Last {lookback_hours}h)")
+    lines.append(f"## New Unique Sale Listings (Last {lookback_hours}h)")
     lines.append("")
     if new_sale:
-        lines.append("| Complex | Rooms | Area | Floor | Total Price | ₮/m² | Flag | Link |")
-        lines.append("| :--- | ---: | ---: | ---: | ---: | ---: | :--- | :--- |")
+        lines.append("| Complex | Rooms | Area | Floor | Windows | Parking | Total Price | ₮/m² | Ads | Link |")
+        lines.append("| :--- | ---: | ---: | :--- | :--- | :--- | ---: | ---: | ---: | :--- |")
         for r in new_sale:
-            flag = "⚠️ anomaly" if r["price_anomaly"] else ""
             lines.append(
                 f"| {r['complex_name']} | {r['rooms']} өрөө | {_fmt_area(r['area_sqm'])} | "
-                f"{_fmt_floor(r['floor'], r['total_floors'])} | "
-                f"{_fmt_mnt_millions(r['total_price_mnt'])} | "
-                f"{_fmt_sqm_mnt(r['price_per_sqm_mnt'])} | {flag} | "
-                f"[View]({r['url']}) |"
+                f"{_fmt_floor(r['floor'], r['total_floors'], r['floor_tier'])} | "
+                f"{r['window_facing'] or '—'} | {_fmt_parking(r['parking_status'])} | "
+                f"{_fmt_mnt_millions(r['total_price_mnt'])} | {_fmt_sqm_mnt(r['price_per_sqm_mnt'])} | "
+                f"{r['duplicate_listing_count']}x | [View]({r['url']}) |"
             )
     else:
         lines.append("_No new sale listings in this window._")
     lines.append("")
 
-    # 5. Price Drops
-    lines.append("## Active Price Drops")
-    lines.append("")
-    if drops:
-        lines.append("| Deal | Complex | Rooms | Area | First Price | Current | Drop | Days | Link |")
-        lines.append("| :--- | :--- | ---: | ---: | ---: | ---: | ---: | ---: | :--- |")
-        for d in drops:
-            lines.append(
-                f"| {d['deal_type']} | {d['complex_name']} | {d['rooms']} өрөө | "
-                f"{_fmt_area(d['area_sqm'])} | {_fmt_mnt_millions(d['first_price_mnt'])} | "
-                f"{_fmt_mnt_millions(d['current_price_mnt'])} | -{d['drop_pct']:.1f}% | "
-                f"{d['days_tracked']}d | [View]({d['url']}) |"
-            )
-    else:
-        lines.append("_No active price drops recorded yet (tracked automatically as daily scans accumulate)._")
-    lines.append("")
-
-    # 6. Breakdown by Rooms (only if data exists)
+    # 6. Breakdown by Rooms
     if sale_by_rooms or rent_by_rooms:
         lines.append("## Breakdown by Room Count (3–5 өрөө)")
         lines.append("")

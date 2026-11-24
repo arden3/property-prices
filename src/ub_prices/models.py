@@ -106,15 +106,23 @@ class ListingRecord(BaseModel):
     area_sqm: Optional[float] = None
     floor: Optional[int] = None
     total_floors: Optional[int] = None
+    floor_tier: str = "unknown"  # high | mid | low | unknown
     year_built: Optional[int] = None
     balcony: str = ""
     garage: str = ""
+    parking_status: str = "unknown"  # included | available | none | unknown
     window_count: Optional[int] = None
+    window_facing: str = ""  # e.g., "South, West"
+    faces_south: bool = False
+    faces_west: bool = False
+    faces_east: bool = False
+    faces_north: bool = False
     payment_terms: str = ""
     furnished: str = ""
 
     raw_price_text: str = ""
     start_price_text: str = ""
+    start_price_mnt: Optional[int] = None
     currency: str = "MNT"
     price_basis: PriceBasis = PriceBasis.UNKNOWN
     total_price_mnt: Optional[int] = None

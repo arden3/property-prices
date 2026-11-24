@@ -267,14 +267,167 @@ def compute_unit_fingerprint(
     rooms: Optional[int],
     area_sqm: Optional[float],
     floor: Optional[int],
-    total_floors: Optional[int],
+    total_floors: Optional[int] = None,
 ) -> str:
-    """Soft deduplication key to cluster multi-broker listings of the same physical unit."""
+    """Soft deduplication key to cluster multi-broker listings of the same physical unit.
+
+    Drops noisy `total_floors` (brokers frequently disagree on 15 vs 16 floors) and buckets
+    area to the nearest 2 m² (e.g. 117.0 vs 118.0 for a 117.5 m² unit).
+    """
     r = str(rooms) if rooms is not None else "?"
-    a = str(int(round(area_sqm))) if area_sqm is not None else "?"
-    f = str(floor) if floor is not None else "?"
-    tf = str(total_floors) if total_floors is not None else "?"
-    return f"{complex_slug}|{deal_type.value}|{r}r|{a}sqm|{f}/{tf}"
+    a = str(int((area_sqm + 1.0) // 2) * 2) if area_sqm is not None else "?"
+    f = f"f{floor}" if floor is not None else "f?"
+    return f"{complex_slug}|{deal_type.value}|{r}r|{a}sqm|{f}"
+
+
+def compute_floor_tier(floor: Optional[int], total_floors: Optional[int]) -> str:
+    """Classify floor height relative to building height (works for both 6F and 23F buildings)."""
+    if floor is None or floor <= 0:
+        return "unknown"
+    if total_floors and total_floors >= floor and total_floors >= 3:
+        ratio = floor / total_floors
+        if floor >= 3 and (ratio >= 0.55 or floor >= 8):
+            return "high"
+        if floor <= 2 or ratio <= 0.25:
+            return "low"
+        return "mid"
+    # Fallback when total_floors is unknown
+    if floor >= 6:
+        return "high"
+    if floor <= 2:
+        return "low"
+    return "mid"
+
+
+def parse_window_orientation(
+    title: str = "", description: str = ""
+) -> tuple[str, bool, bool, bool, bool]:
+    """Parse window/view cardinal directions while ignoring location phrases like 'гүүрний баруун талд'."""
+    combined = f"{title or ''}\n{description or ''}"
+    # Split into lines / sentence fragments
+    segments = re.split(r"[\r\n•✅✔📍▪✦\-;]+", combined)
+
+    south = west = east = north = False
+    view_trigger = re.compile(
+        r"(?:цонх|харсан|харууц|харагдац|тагт|балкон|наран\s*тал|window|facing|sun)",
+        flags=re.IGNORECASE | re.UNICODE,
+    )
+    location_noise = re.compile(
+        r"(?:гүүр|зам|сургууль|цэцэрлэг|хороо|хотхоны|эмнэлэг|маркет|парк|буудал|талд\s+байрла|байрлал)",
+        flags=re.IGNORECASE | re.UNICODE,
+    )
+
+    for seg in segments:
+        s = seg.strip()
+        if not s or not view_trigger.search(s):
+            continue
+        # If a segment is clearly describing building geography rather than windows, skip it
+        if location_noise.search(s) and not re.search(r"(?:цонх|харууц|харсан)", s, flags=re.I):
+            continue
+        low = s.lower()
+        if re.search(r"(?:урагш|урагшаа|өмнө\s*зүг|өмнөд|наран\s*тал|south)", low):
+            south = True
+        if re.search(r"(?:баруун|баруунш|west)", low):
+            west = True
+        if re.search(r"(?:зүүн|зүүнш|east)", low):
+            east = True
+        if re.search(r"(?:хойш|хойшоо|хойд\s*зүг|хойд\s*тал\s*руу|north)", low):
+            north = True
+
+    labels = []
+    if south:
+        labels.append("South")
+    if west:
+        labels.append("West")
+    if east:
+        labels.append("East")
+    if north:
+        labels.append("North")
+    return ", ".join(labels), south, west, east, north
+
+
+def parse_parking_status(
+    garage_feature: str = "", title: str = "", description: str = ""
+) -> str:
+    """Detect whether interior/underground car parking is included, available separately, or absent."""
+    g = (garage_feature or "").strip().lower()
+    combined = f"{title or ''} {description or ''}".lower()
+
+    extra_cost = bool(
+        re.search(
+            r"(?:гараж|граж|зогсоол)[^\n]{0,30}(?:тусдаа|нэмэлт|үнэтэй|авах\s*боломж|худалдаж|сая)",
+            combined,
+        )
+        or re.search(r"(?:тусдаа|нэмэлт)[^\n]{0,20}(?:гараж|граж|зогсоол)", combined)
+    )
+    mentioned_included = bool(
+        re.search(
+            r"(?:дулаан\s*зогсоолтой|гаражтай|гражтай|зогсоолтой|гараж\s*хамт|зогсоол\s*хамт|зогсоол\s*дагалдана|with\s*parking|garage\s*included)",
+            combined,
+        )
+    )
+    mentioned_none = bool(re.search(r"(?:гаражгүй|гражгүй|зогсоолгүй)", combined))
+
+    if extra_cost:
+        return "available"
+    if g == "байгаа" or mentioned_included:
+        return "included"
+    if g == "байхгүй" or mentioned_none:
+        return "none"
+    return "unknown"
+
+
+def parse_start_price_mnt(
+    deal_type: DealType,
+    start_price_text: str,
+    currency: str,
+    area_sqm: Optional[float],
+    current_total_mnt: Optional[int],
+) -> Optional[int]:
+    """Parse Unegui's original `start_price` into MNT when it represents a valid seller reduction."""
+    if not start_price_text or not start_price_text.strip() or current_total_mnt is None:
+        return None
+    _, start_total, _, start_anom, _ = normalize_price(
+        deal_type=deal_type,
+        raw_price_text=start_price_text,
+        price_without_currency=None,
+        currency=currency,
+        area_sqm=area_sqm,
+    )
+    if start_anom or start_total is None or start_total <= current_total_mnt:
+        return None
+    # Guard against wild typo start_prices (> 2x current price)
+    if start_total > current_total_mnt * 2.0:
+        return None
+    return start_total
+
+
+def enrich_listing_record(record: ListingRecord) -> ListingRecord:
+    """Recompute derived deduplication, start_price, window orientation, parking, and floor tier."""
+    record.unit_fingerprint = compute_unit_fingerprint(
+        complex_slug=record.complex_slug,
+        deal_type=record.deal_type,
+        rooms=record.rooms,
+        area_sqm=record.area_sqm,
+        floor=record.floor,
+        total_floors=record.total_floors,
+    )
+    record.floor_tier = compute_floor_tier(record.floor, record.total_floors)
+    wf, south, west, east, north = parse_window_orientation(record.title, record.description)
+    record.window_facing = wf
+    record.faces_south = south
+    record.faces_west = west
+    record.faces_east = east
+    record.faces_north = north
+    record.parking_status = parse_parking_status(record.garage, record.title, record.description)
+    record.start_price_mnt = parse_start_price_mnt(
+        deal_type=record.deal_type,
+        start_price_text=record.start_price_text,
+        currency=record.currency,
+        area_sqm=record.area_sqm,
+        current_total_mnt=record.total_price_mnt,
+    )
+    return record
 
 
 def extract_district(location_text: str) -> str:
@@ -399,4 +552,5 @@ def build_listing_record(
         description=detail.description.strip(),
         is_active=not detail.is_closed,
     )
+    enrich_listing_record(record)
     return record, ""

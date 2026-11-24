@@ -148,6 +148,7 @@ def run_scan(
                             break
 
                         page_matches = 0
+                        page_new_unique = 0
                         for card in cards:
                             if not _card_room_allowed(card, allowed_slugs):
                                 continue
@@ -161,16 +162,18 @@ def run_scan(
                             key = (card.source, card.external_id)
                             if key not in matched_candidates:
                                 matched_candidates[key] = (card, res)
+                                page_new_unique += 1
 
                         logger.info(
-                            "  -> %d cards, %d matched watchlist (cumulative unique=%d)",
+                            "  -> %d cards, %d matched watchlist (+%d new unique, cumulative=%d)",
                             len(cards),
                             page_matches,
+                            page_new_unique,
                             len(matched_candidates),
                         )
 
-                        # Stop paginating once relevance drops off completely
-                        if not has_next or page_matches == 0:
+                        # Stop paginating once relevance drops off or a redundant Cyrillic query adds 0 new IDs
+                        if not has_next or page_matches == 0 or page_new_unique == 0:
                             break
                     if blocked:
                         break
