@@ -70,6 +70,8 @@ complexes:
   - slug: river-garden
     name: "River Garden"
     zone: "Marshall / Tuul River"
+    banner_image: "https://cdn.prod.website-files.com/6a14531572624ed8fb06a27f/6a61f51178ea22f6f72b823b_RG_Panorama%2014.webp"
+    accent_color: "#0f766e"
     search_queries:
       - "river garden"
       - "ривер гарден"
@@ -98,6 +100,8 @@ complexes:
   - slug: bella-vista
     name: "Bella Vista"
     zone: "Zaisan Foothills"
+    banner_image: "https://mcsestates.mn/wp-content/uploads/2021/10/bella-vista.jpeg"
+    accent_color: "#7c3aed"
     search_queries:
       - "bella vista"
       - "белла виста"
@@ -114,6 +118,8 @@ complexes:
   - slug: buddha-vista
     name: "Buddha Vista"
     zone: "Zaisan Foothills"
+    banner_image: "https://mcsestates.mn/wp-content/uploads/2021/10/viber_image_2021-10-19_11-46-01-299.jpg"
+    accent_color: "#d97706"
     search_queries:
       - "buddha vista"
       - "будда виста"
@@ -129,6 +135,8 @@ complexes:
   - slug: time-square
     name: "Time Square"
     zone: "Marshall / Tuul River"
+    banner_image: "https://cdn.prod.website-files.com/6a14531572624ed8fb06a27f/6a5dd9f1c48d3b5872031f3c_DJI_0049-p-800.jpg"
+    accent_color: "#2563eb"
     search_queries:
       - "time square"
       - "тайм скүэр"
@@ -151,6 +159,8 @@ complexes:
   - slug: khan-hills
     name: "Khan Hills"
     zone: "Marshall / Tuul River"
+    banner_image: "assets/khan-hills.jpg"
+    accent_color: "#059669"
     search_queries:
       - "khan hills"
       - "хан хиллс"
@@ -169,6 +179,8 @@ complexes:
   - slug: king-tower
     name: "King Tower"
     zone: "Marshall / Tuul River"
+    banner_image: "https://www.kingtower.mn/assets/images/landing/6.panorama/panorama.jpg"
+    accent_color: "#b45309"
     search_queries:
       - "king tower"
       - "кинг тауэр"
@@ -189,6 +201,8 @@ complexes:
   - slug: marshall-town
     name: "Marshall Town"
     zone: "Marshall / Tuul River"
+    banner_image: "https://ecoconstruction.mn/content/project/project4.jpg"
+    accent_color: "#0284c7"
     search_queries:
       - "marshall town"
       - "маршалл таун"
@@ -210,6 +224,8 @@ complexes:
   - slug: japan-town
     name: "Japan Town"
     zone: "120 Myangat / Ikh Mongol"
+    banner_image: "assets/japan-town.jpg"
+    accent_color: "#e11d48"
     search_queries:
       - "japan town"
       - "жапан таун"
@@ -226,6 +242,8 @@ complexes:
   - slug: vega-city
     name: "Vega City"
     zone: "120 Myangat / Orchlon"
+    banner_image: "https://cdn.prod.website-files.com/6a14531572624ed8fb06a27f/6a45c4fc3117a2ca4521eaaf_1.jpg"
+    accent_color: "#4f46e5"
     search_queries:
       - "vega city"
       - "вега сити"
@@ -240,6 +258,8 @@ complexes:
   - slug: gerlug-vista
     name: "Gerlug Vista"
     zone: "National Park / E-Mart"
+    banner_image: "https://cp.mglenc.com/postpic/image/content/10%201720x1080px%20(3).jpg"
+    accent_color: "#0d9488"
     search_queries:
       - "gerlug vista"
       - "гэрлүг виста"
@@ -256,6 +276,8 @@ complexes:
   - slug: jardin
     name: "Jardin Residence"
     zone: "Zaisan Foothills"
+    banner_image: "https://doimocontract.it/wp-content/uploads/2022/12/JARDIN-RESIDENCE-Copertina_1.jpg"
+    accent_color: "#9333ea"
     search_queries:
       - "jardin"
       - "жардин"
@@ -273,6 +295,8 @@ complexes:
   - slug: seoul-royal-county
     name: "Seoul Royal County"
     zone: "Zaisan Foothills"
+    banner_image: "https://seoulgroup.co.kr/wp-content/uploads/2020/11/04-768x512.jpeg"
+    accent_color: "#db2777"
     search_queries:
       - "seoul royal"
       - "сөүл роял"

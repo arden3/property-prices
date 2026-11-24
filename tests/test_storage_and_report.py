@@ -229,7 +229,9 @@ def test_full_lifecycle_scan_price_drop_delisting_and_views(tmp_path: Path):
     dash_path = tmp_path / "docs" / "index.html"
     generate_dashboard(cfg, data_dir, dash_path, db_path=db_path)
     html = dash_path.read_text(encoding="utf-8")
-    assert "Ulaanbaatar Family Property Tracker" in html
+    assert "Ulaanbaatar Family Apartment Finder" in html
     assert "River Garden" in html
     assert "South, West" in html
-    assert "sample1.webp" in html
+    assert "Rent (Түрээс)" in html
+    assert "Buy (Зарна)" in html
+    assert "RG_Panorama" in html

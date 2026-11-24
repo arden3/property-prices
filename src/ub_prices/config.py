@@ -24,6 +24,8 @@ class ComplexConfig(BaseModel):
     slug: str
     name: str
     zone: str
+    banner_image: str = ""
+    accent_color: str = "#0f766e"
     search_queries: list[str] = Field(default_factory=list)
     aliases: list[str] = Field(default_factory=list)
     exclude: list[str] = Field(default_factory=list)
