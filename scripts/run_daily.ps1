@@ -34,7 +34,7 @@ function Write-Log {
     param([string]$Message)
     $ts = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
     $line = "[$ts] $Message"
-    Write-Output $line
+    Write-Host $line
     Add-Content -Path $LogFile -Value $line -Encoding UTF8
 }
 
