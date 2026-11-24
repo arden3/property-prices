@@ -1,5 +1,5 @@
 # Ulaanbaatar Family Property Price Tracker — Watchlist & Filter Configuration
-# All 12 complexes are in Khan-Uul District (Marshall / Tuul River, Zaisan, 120 Myangat / National Park).
+# All 8 complexes are in Khan-Uul District (Marshall / Tuul River, Zaisan, 120 Myangat).
 
 filters:
   # Mongolian room counts include the living room:
@@ -64,8 +64,6 @@ filters:
     - "ард"
     - "хойд"
 
-# Order matters for overlapping complexes:
-# king-tower is evaluated before marshall-town because King Tower sits inside Marshall Town.
 complexes:
   - slug: river-garden
     name: "River Garden"
@@ -97,24 +95,6 @@ complexes:
       - "river hills"
       - "ривер хиллс"
 
-  - slug: bella-vista
-    name: "Bella Vista"
-    zone: "Zaisan Foothills"
-    banner_image: "https://mcsestates.mn/wp-content/uploads/2021/10/bella-vista.jpeg"
-    accent_color: "#7c3aed"
-    search_queries:
-      - "bella vista"
-      - "белла виста"
-    aliases:
-      - "bella vista"
-      - "bellavista"
-      - "белла виста"
-      - "бэлла виста"
-      - "бела виста"
-      - "бэла виста"
-      - "беллависта"
-    exclude: []
-
   - slug: buddha-vista
     name: "Buddha Vista"
     zone: "Zaisan Foothills"
@@ -136,7 +116,7 @@ complexes:
     name: "Time Square"
     zone: "Marshall / Tuul River"
     banner_image: "https://cdn.prod.website-files.com/6a14531572624ed8fb06a27f/6a5dd9f1c48d3b5872031f3c_DJI_0049-p-800.jpg"
-    accent_color: "#2563eb"
+    accent_color: "#4f46e5"
     search_queries:
       - "time square"
       - "тайм скүэр"
@@ -198,29 +178,6 @@ complexes:
       - "кингтавер"
     exclude: []
 
-  - slug: marshall-town
-    name: "Marshall Town"
-    zone: "Marshall / Tuul River"
-    banner_image: "https://ecoconstruction.mn/content/project/project4.jpg"
-    accent_color: "#0284c7"
-    search_queries:
-      - "marshall town"
-      - "маршалл таун"
-      - "маршал таун"
-    aliases:
-      - "marshall town"
-      - "marshal town"
-      - "deluxe marshall"
-      - "deluxe marshall village"
-      - "marshall village"
-      - "маршалл таун"
-      - "маршал таун"
-      - "делюкс маршалл"
-      - "делюкс маршал"
-      - "маршалл виллаж"
-      - "маршал виллаж"
-    exclude: []
-
   - slug: japan-town
     name: "Japan Town"
     zone: "120 Myangat / Ikh Mongol"
@@ -237,41 +194,11 @@ complexes:
       - "япон таун"
       - "жапантаун"
       - "японтаун"
-    exclude: []
-
-  - slug: vega-city
-    name: "Vega City"
-    zone: "120 Myangat / Orchlon"
-    banner_image: "https://cdn.prod.website-files.com/6a14531572624ed8fb06a27f/6a45c4fc3117a2ca4521eaaf_1.jpg"
-    accent_color: "#4f46e5"
-    search_queries:
-      - "vega city"
-      - "вега сити"
-    aliases:
-      - "vega city"
-      - "vegacity"
-      - "вега сити"
-      - "вэга сити"
-      - "вегасити"
-    exclude: []
-
-  - slug: gerlug-vista
-    name: "Gerlug Vista"
-    zone: "National Park / E-Mart"
-    banner_image: "https://cp.mglenc.com/postpic/image/content/10%201720x1080px%20(3).jpg"
-    accent_color: "#0d9488"
-    search_queries:
-      - "gerlug vista"
-      - "гэрлүг виста"
-    aliases:
-      - "gerlug vista"
-      - "gerelug vista"
-      - "gerlugvista"
-      - "гэрлүг виста"
-      - "гэрэлүг виста"
-      - "гэрлуг виста"
-      - "гэрлүгвиста"
-    exclude: []
+    exclude:
+      - "tokyo town"
+      - "токио таун"
+      - "royal garden"
+      - "роял гарден"
 
   - slug: jardin
     name: "Jardin Residence"

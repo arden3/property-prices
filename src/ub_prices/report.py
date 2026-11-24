@@ -149,7 +149,7 @@ def generate_report(
     lines.append("# Ulaanbaatar Property Prices — Daily Digest")
     lines.append("")
     lines.append(
-        f"_Generated: {generated_at} · Scope: 12 Khan-Uul / Zaisan complexes · 3–5 өрөө (2–4 bed) · ≥ 60 m²_"
+        f"_Generated: {generated_at} · Scope: {len(config.complexes)} Khan-Uul / Zaisan complexes · 3–5 өрөө (2–4 bed) · ≥ 60 m²_"
     )
     lines.append("")
 
@@ -177,8 +177,8 @@ def generate_report(
     )
     lines.append("")
 
-    # 2. All-12-Complex Market Snapshot (Rent vs. Buy)
-    lines.append("## 12-Complex Market Snapshot (Deduplicated Active Units)")
+    # 2. All-Complex Market Snapshot (Rent vs. Buy)
+    lines.append(f"## {len(config.complexes)}-Complex Market Snapshot (Deduplicated Active Units)")
     lines.append("")
     lines.append(
         "| Complex | Zone | Sale Units | Median Sale ₮/m² | Median Sale Total | Rent Units | Median Rent/mo | Est. Gross Yield | Price / Annual Rent |"

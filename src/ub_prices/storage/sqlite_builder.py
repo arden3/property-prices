@@ -6,6 +6,7 @@ import json
 import sqlite3
 from pathlib import Path
 
+from ub_prices.dedupe import assign_property_clusters
 from ub_prices.storage.store import CanonicalStore
 
 SCHEMA_SQL = """
@@ -51,6 +52,7 @@ CREATE TABLE listings (
     price_anomaly INTEGER NOT NULL DEFAULT 0,
     price_anomaly_reason TEXT,
     unit_fingerprint TEXT,
+    cluster_id TEXT NOT NULL DEFAULT '',
     seller_id TEXT,
     seller_name TEXT,
     is_business INTEGER,
@@ -98,15 +100,16 @@ CREATE TABLE scrape_runs (
 
 CREATE INDEX idx_listings_complex_deal ON listings (complex_slug, deal_type, is_active);
 CREATE INDEX idx_listings_fingerprint ON listings (unit_fingerprint);
+CREATE INDEX idx_listings_cluster ON listings (cluster_id);
 CREATE INDEX idx_price_history_key ON price_history (source, external_id, observed_at);
 
--- Deduplicate active, non-anomaly multi-realtor ads by unit_fingerprint.
--- Picks lowest asking price per unit, breaking ties by richest metadata (orientation/parking)
--- and freshest last_seen_at. Aggregates broker ad count and URLs across duplicates.
+-- Deduplicate active, non-anomaly multi-realtor ads using smart multi-signal cluster_id
+-- (handles broker floor-fudging, swapped floor/total_floors, 3r/4r disagreement, area rounding,
+-- and copied descriptions). Picks lowest asking price per cluster, aggregating metadata & ad count.
 CREATE VIEW v_active_deduped AS
 WITH fp_stats AS (
     SELECT
-        unit_fingerprint,
+        cluster_id,
         COUNT(*) AS duplicate_listing_count,
         GROUP_CONCAT(url, ' | ') AS duplicate_urls,
         MAX(faces_south) AS any_south,
@@ -120,7 +123,7 @@ WITH fp_stats AS (
     WHERE is_active = 1
       AND price_anomaly = 0
       AND total_price_mnt IS NOT NULL
-    GROUP BY unit_fingerprint
+    GROUP BY cluster_id
 ),
 ranked AS (
     SELECT
@@ -138,16 +141,16 @@ ranked AS (
             ELSE COALESCE(s.any_image_urls_json, '[]')
         END AS effective_image_urls_json,
         ROW_NUMBER() OVER (
-            PARTITION BY l.unit_fingerprint
+            PARTITION BY l.cluster_id
             ORDER BY
                 l.total_price_mnt ASC,
-                (CASE WHEN l.image_urls_json != '[]' THEN 1 ELSE 0 END) DESC,
                 (CASE WHEN l.window_facing != '' THEN 1 ELSE 0 END) DESC,
                 (CASE WHEN l.parking_status IN ('included', 'available') THEN 1 ELSE 0 END) DESC,
+                (CASE WHEN l.image_urls_json != '[]' THEN 1 ELSE 0 END) DESC,
                 l.last_seen_at DESC
         ) AS rn
     FROM listings l
-    JOIN fp_stats s ON s.unit_fingerprint = l.unit_fingerprint
+    JOIN fp_stats s ON s.cluster_id = l.cluster_id
     WHERE l.is_active = 1
       AND l.price_anomaly = 0
       AND l.total_price_mnt IS NOT NULL
@@ -434,6 +437,7 @@ def build_sqlite_db(data_dir: Path, db_path: Path | None = None) -> Path:
         tmp_db.unlink()
 
     listings = store.load_listings()
+    clusters = assign_property_clusters(listings.values())
     history = store.load_price_history()
     runs = store.load_scrape_runs()
 
@@ -451,11 +455,11 @@ def build_sqlite_db(data_dir: Path, db_path: Path | None = None) -> Path:
                 faces_west, faces_east, faces_north, payment_terms, furnished,
                 raw_price_text, start_price_text, start_price_mnt, currency,
                 price_basis, total_price_mnt, price_per_sqm_mnt, price_anomaly,
-                price_anomaly_reason, unit_fingerprint, seller_id, seller_name, is_business,
+                price_anomaly_reason, unit_fingerprint, cluster_id, seller_id, seller_name, is_business,
                 published_label, description, image_urls_json, first_seen_at, last_seen_at, missed_scans, is_active
             ) VALUES (
                 ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
             )
             """,
             [
@@ -469,7 +473,8 @@ def build_sqlite_db(data_dir: Path, db_path: Path | None = None) -> Path:
                     r.payment_terms, r.furnished, r.raw_price_text, r.start_price_text,
                     r.start_price_mnt, r.currency, r.price_basis.value, r.total_price_mnt,
                     r.price_per_sqm_mnt, int(r.price_anomaly), r.price_anomaly_reason,
-                    r.unit_fingerprint, r.seller_id, r.seller_name,
+                    r.unit_fingerprint, clusters.get(r.key, r.unit_fingerprint),
+                    r.seller_id, r.seller_name,
                     None if r.is_business is None else int(r.is_business),
                     r.published_label, r.description,
                     json.dumps(r.image_urls[:5], ensure_ascii=False),

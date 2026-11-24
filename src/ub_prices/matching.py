@@ -147,16 +147,9 @@ class ComplexMatcher:
         tokens_lat = text_lat.split()
 
         for comp, norm_aliases, lat_aliases, norm_excludes in self._compiled:
-            # Skip if an explicit complex-level exclusion phrase appears (e.g., "river stone" for river-garden)
+            # Skip if an explicit competing complex name appears (e.g., "river stone", "royal garden", "tokyo town")
             if any(self._contains_whole_phrase(text_norm, ex) for ex in norm_excludes):
-                # Only skip if a true positive alias does NOT also appear separately
-                has_exact_pos = any(
-                    self._contains_whole_phrase(text_norm, a)
-                    and not any(a in ex for ex in norm_excludes)
-                    for a in norm_aliases
-                )
-                if not has_exact_pos:
-                    continue
+                continue
 
             # 1. Exact normalized phrase match
             for alias in norm_aliases:

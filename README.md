@@ -1,11 +1,11 @@
 # Ulaanbaatar Family Property Price Database (`ub-prices`)
 
-A personal, slow-and-steady tracker of **sale and long-term rental prices** across **12 Khan-Uul / Zaisan residential complexes** in Ulaanbaatar, built to support a "rent first, then buy" decision.
+A personal, slow-and-steady tracker of **sale and long-term rental prices** across **8 Khan-Uul / Zaisan residential complexes** in Ulaanbaatar, built to support a "rent first, then buy" decision.
 
-## Watchlist (12 Complexes)
-- **Marshall / Tuul River:** River Garden, Time Square, Khan Hills, King Tower, Marshall Town
-- **Zaisan Foothills:** Bella Vista, Buddha Vista, Jardin Residence, Seoul Royal County
-- **120 Myangat / National Park:** Japan Town, Vega City, Gerlug Vista
+## Watchlist (8 Complexes)
+- **Marshall / Tuul River:** River Garden, Time Square, Khan Hills, King Tower
+- **Zaisan Foothills:** Buddha Vista, Jardin Residence, Seoul Royal County
+- **120 Myangat / Ikh Mongol:** Japan Town
 
 ### Listing Criteria
 - **Deal types:** Both Sale (`зарна`) and Long-Term Rent (`түрээслүүлнэ`)

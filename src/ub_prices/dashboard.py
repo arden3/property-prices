@@ -654,7 +654,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <div class="hero-inner">
       <div>
         <h1>Ulaanbaatar Family Apartment Finder</h1>
-        <div class="hero-sub">12 Khan-Uul &amp; Zaisan Complexes · 3–5 өрөө (2–4 Bed) · ≥ 60 m² · Deduplicated</div>
+        <div class="hero-sub">__COMPLEX_COUNT__ Khan-Uul &amp; Zaisan Complexes · 3–5 өрөө (2–4 Bed) · ≥ 60 m² · Deduplicated</div>
       </div>
       <div class="meta-pill" id="metaPill">Loading...</div>
     </div>
@@ -680,7 +680,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <section id="viewDeal">
       <div class="section-title">
         <span id="stripLabel">Browse by Complex (click a photo to filter)</span>
-        <button class="chip-reset" id="btnClearComplex" style="display:none;" onclick="selectComplex('all')">Show all 12 complexes</button>
+        <button class="chip-reset" id="btnClearComplex" style="display:none;" onclick="selectComplex('all')">Show all __COMPLEX_COUNT__ complexes</button>
       </div>
       <div class="complex-strip" id="complexStrip"></div>
 
@@ -690,7 +690,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         <div class="filters">
           <div class="field">
             <label for="fComplex">Complex</label>
-            <select id="fComplex"><option value="all">All 12 Complexes</option></select>
+            <select id="fComplex"><option value="all">All __COMPLEX_COUNT__ Complexes</option></select>
           </div>
           <div class="field">
             <label for="fRooms">Rooms (өрөө)</label>
@@ -758,7 +758,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     <!-- RENT VS BUY & PRICE CUTS COMPARISON VIEW -->
     <section id="viewCompare" class="hidden">
       <div class="card">
-        <h2>12-Complex Rent vs. Buy Yield Comparison (Deduplicated Units)</h2>
+        <h2>__COMPLEX_COUNT__-Complex Rent vs. Buy Yield Comparison (Deduplicated Units)</h2>
         <div class="table-scroll">
           <table>
             <thead>
@@ -879,7 +879,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     function renderComplexStrip() {
       const isRent = state.mode === "rent";
       document.getElementById("stripLabel").textContent =
-        isRent ? "12 Complexes — Rental Snapshot (click a photo to filter)" : "12 Complexes — Purchase Snapshot (click a photo to filter)";
+        isRent ? `${DATA.complexes.length} Complexes — Rental Snapshot (click a photo to filter)` : `${DATA.complexes.length} Complexes — Purchase Snapshot (click a photo to filter)`;
       document.getElementById("btnClearComplex").style.display = state.complex === "all" ? "none" : "inline";
 
       document.getElementById("complexStrip").innerHTML = DATA.complexes.map((c) => {
@@ -1302,7 +1302,9 @@ def generate_dashboard(
 
     payload = _load_dashboard_payload(config, data_dir, target_db)
     safe_json = json.dumps(payload, ensure_ascii=False).replace("</", "<\\/")
-    html = HTML_TEMPLATE.replace("__DASHBOARD_JSON__", safe_json)
+    html = HTML_TEMPLATE.replace("__DASHBOARD_JSON__", safe_json).replace(
+        "__COMPLEX_COUNT__", str(len(config.complexes))
+    )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(html, encoding="utf-8")

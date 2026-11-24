@@ -404,6 +404,14 @@ def parse_start_price_mnt(
 
 def enrich_listing_record(record: ListingRecord) -> ListingRecord:
     """Recompute derived deduplication, start_price, window orientation, parking, and floor tier."""
+    # Fix common broker typo where floor and total_floors are entered swapped (e.g. 14/9F -> 9/14F)
+    if (
+        record.floor is not None
+        and record.total_floors is not None
+        and record.floor > record.total_floors > 0
+    ):
+        record.floor, record.total_floors = record.total_floors, record.floor
+
     record.unit_fingerprint = compute_unit_fingerprint(
         complex_slug=record.complex_slug,
         deal_type=record.deal_type,
