@@ -109,7 +109,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <title>Ulaanbaatar Family Property Tracker — Rent &amp; Buy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400..900&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>
     :root {
@@ -137,9 +137,11 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       --shadow-hover: 0 8px 22px rgba(15, 23, 42, 0.11);
     }
     * { box-sizing: border-box; }
+    body, button, input, select, textarea {
+      font-family: "Noto Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
     body {
       margin: 0;
-      font-family: "Noto Sans", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
       background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bot) 420px, var(--bg-bot) 100%);
       color: var(--text);
       line-height: 1.45;
