@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Compiled SQLite DB (rebuilt from canonical JSONL/CSV via `ub-prices build-db`)
+data/ub_prices.db
+data/ub_prices.db-journal
+data/ub_prices.db-wal
+data/ub_prices.db-shm
+
+# Local scratch / debug HTML dumps
+*.html
+.env
+.DS_Store
+Thumbs.db

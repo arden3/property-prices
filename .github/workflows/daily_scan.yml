@@ -1,0 +1,104 @@
+name: Daily UB Property Scan
+
+on:
+  schedule:
+    # 01:00 UTC = 09:00 AM Ulaanbaatar time (UTC+8)
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+    inputs:
+      complex:
+        description: "Optional single complex slug (leave empty for all 12)"
+        required: false
+        default: ""
+      max_pages:
+        description: "Max search pages per query"
+        required: false
+        default: "3"
+      max_details:
+        description: "Max new/changed detail pages to fetch in this run"
+        required: false
+        default: "120"
+      dry_run:
+        description: "Run without modifying data files"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ub-prices-daily-scan
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install ub-prices
+        run: pip install -e .
+
+      - name: Run polite daily scan
+        id: scan
+        continue-on-error: true
+        env:
+          INPUT_COMPLEX: ${{ inputs.complex }}
+          INPUT_MAX_PAGES: ${{ inputs.max_pages || '3' }}
+          INPUT_MAX_DETAILS: ${{ inputs.max_details || '120' }}
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          ARGS="--source unegui --max-pages ${INPUT_MAX_PAGES} --max-details ${INPUT_MAX_DETAILS} --min-delay 3.5 --max-delay 6.5"
+          if [ -n "${INPUT_COMPLEX}" ]; then
+            ARGS="${ARGS} --complex ${INPUT_COMPLEX}"
+          fi
+          if [ "${INPUT_DRY_RUN}" = "true" ]; then
+            ARGS="${ARGS} --dry-run"
+          fi
+          ub-prices scan ${ARGS}
+
+      - name: Build SQLite database and daily digest
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          ub-prices build-db
+          ub-prices report --output reports/latest.md
+          if [ -f reports/latest.md ]; then
+            cat reports/latest.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload SQLite database artifact
+        if: ${{ inputs.dry_run != true && hashFiles('data/ub_prices.db') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ub-prices-sqlite-${{ github.run_id }}
+          path: data/ub_prices.db
+          retention-days: 30
+
+      - name: Commit updated data and daily digest
+        if: ${{ inputs.dry_run != true }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/ reports/latest.md
+          if git diff --cached --quiet; then
+            echo "No data changes to commit."
+          else
+            git commit -m "chore(data): daily UB property scan $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - name: Check scan exit status
+        if: steps.scan.outcome == 'failure'
+        run: |
+          echo "::warning::Scan exited with non-zero status (e.g., site blocked datacenter IP or transient error). Check reports/latest.md and scrape_runs.csv."
+          exit 1

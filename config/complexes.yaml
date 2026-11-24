@@ -1,0 +1,299 @@
+# Ulaanbaatar Family Property Price Tracker — Watchlist & Filter Configuration
+# All 12 complexes are in Khan-Uul District (Marshall / Tuul River, Zaisan, 120 Myangat / National Park).
+
+filters:
+  # Mongolian room counts include the living room:
+  # 3 өрөө = 2 bedrooms, 4 өрөө = 3 bedrooms, 5 өрөө = 4 bedrooms
+  rooms_min: 3
+  rooms_max: 5
+  min_area_sqm: 60.0
+  max_area_sqm: null
+
+  # Allowed Unegui rubric slugs on search index pages (5-r is "5+ өрөө"; exact room count verified on detail)
+  allowed_room_slugs:
+    - "3-r"
+    - "4-r"
+    - "5-r"
+
+  # Exclude commercial spaces, offices, standalone garages, and short-term/daily rentals
+  exclude_keywords:
+    - "үйлчилгээний талбай"
+    - "үйлчилгээний зориулалттай"
+    - "худалдаа үйлчилгээ"
+    - "оффис"
+    - "оффисын талбай"
+    - "office"
+    - "гараж зарна"
+    - "граж зарна"
+    - "дулаан зогсоол зарна"
+    - "авто зогсоол зарна"
+    - "зогсоол түрээслүүлнэ"
+    - "граж түрээслүүлнэ"
+    - "гараж түрээслүүлнэ"
+    - "хоногийн түрээс"
+    - "хоногоор"
+    - "өдрөөр түрээслүүлнэ"
+    - "өдрөөр хөлслүүлнэ"
+    - "цагаар түрээслүүлнэ"
+
+  # Hard title-only exclusions for standalone garages (allows apartments mentioning "зогсоолтой" / with parking)
+  standalone_parking_patterns:
+    - '^\s*(?:дулаан\s+)?(?:авто\s+)?(?:зогсоол|граж|гараж)\b'
+    - '\b(?:дулаан\s+)?(?:авто\s+)?(?:зогсоол|граж|гараж)\s+(?:зарна|худалдана|түрээслүүлнэ)\b'
+
+  # Mongolian proximity words immediately following a complex name that indicate a neighboring building
+  proximity_words:
+    - "хажууд"
+    - "хажуугийн"
+    - "ойролцоо"
+    - "ойрхон"
+    - "ойр"
+    - "дэргэд"
+    - "залгаа"
+    - "эсрэг талд"
+    - "урд талд"
+    - "хойд талд"
+    - "зүүн талд"
+    - "баруун талд"
+    - "чанга урд"
+    - "чанга ард"
+    - "яг урд"
+    - "яг ард"
+    - "яг хажууд"
+    - "урд"
+    - "ард"
+    - "хойд"
+
+# Order matters for overlapping complexes:
+# king-tower is evaluated before marshall-town because King Tower sits inside Marshall Town.
+complexes:
+  - slug: river-garden
+    name: "River Garden"
+    zone: "Marshall / Tuul River"
+    search_queries:
+      - "river garden"
+      - "ривер гарден"
+    aliases:
+      - "river garden"
+      - "river garden 1"
+      - "river garden 2"
+      - "rivergarden"
+      - "ривер гарден"
+      - "ривер гарден 1"
+      - "ривер гарден 2"
+      - "ривэр гардэн"
+      - "ривэр гарден"
+      - "ривер гардэн"
+      - "ривергарден"
+    exclude:
+      - "river stone"
+      - "ривер стоун"
+      - "river plaza"
+      - "ривер плаза"
+      - "river villa"
+      - "ривер вилла"
+      - "river hills"
+      - "ривер хиллс"
+
+  - slug: bella-vista
+    name: "Bella Vista"
+    zone: "Zaisan Foothills"
+    search_queries:
+      - "bella vista"
+      - "белла виста"
+    aliases:
+      - "bella vista"
+      - "bellavista"
+      - "белла виста"
+      - "бэлла виста"
+      - "бела виста"
+      - "бэла виста"
+      - "беллависта"
+    exclude: []
+
+  - slug: buddha-vista
+    name: "Buddha Vista"
+    zone: "Zaisan Foothills"
+    search_queries:
+      - "buddha vista"
+      - "будда виста"
+    aliases:
+      - "buddha vista"
+      - "buda vista"
+      - "buddhavista"
+      - "будда виста"
+      - "буда виста"
+      - "буддависта"
+    exclude: []
+
+  - slug: time-square
+    name: "Time Square"
+    zone: "Marshall / Tuul River"
+    search_queries:
+      - "time square"
+      - "тайм скүэр"
+      - "тайм сквер"
+    aliases:
+      - "time square"
+      - "times square"
+      - "timesquare"
+      - "тайм скүэр"
+      - "тайм сквер"
+      - "тайм сквэр"
+      - "тайм сквэйр"
+      - "таймс скүэр"
+      - "таймс сквер"
+      - "таймс сквэр"
+      - "таймскүэр"
+      - "таймсквер"
+    exclude: []
+
+  - slug: khan-hills
+    name: "Khan Hills"
+    zone: "Marshall / Tuul River"
+    search_queries:
+      - "khan hills"
+      - "хан хиллс"
+    aliases:
+      - "khan hills"
+      - "khan hill"
+      - "khanhills"
+      - "хан хиллс"
+      - "хан хиллз"
+      - "хан хилс"
+      - "хан хилз"
+      - "ханхиллс"
+      - "ханхиллз"
+    exclude: []
+
+  - slug: king-tower
+    name: "King Tower"
+    zone: "Marshall / Tuul River"
+    search_queries:
+      - "king tower"
+      - "кинг тауэр"
+      - "кинг тавер"
+    aliases:
+      - "king tower"
+      - "kingtower"
+      - "кинг тауэр"
+      - "кинг тавер"
+      - "кинг товер"
+      - "кинг тоуэр"
+      - "кинг тауер"
+      - "кинг таур"
+      - "кингтауэр"
+      - "кингтавер"
+    exclude: []
+
+  - slug: marshall-town
+    name: "Marshall Town"
+    zone: "Marshall / Tuul River"
+    search_queries:
+      - "marshall town"
+      - "маршалл таун"
+      - "маршал таун"
+    aliases:
+      - "marshall town"
+      - "marshal town"
+      - "deluxe marshall"
+      - "deluxe marshall village"
+      - "marshall village"
+      - "маршалл таун"
+      - "маршал таун"
+      - "делюкс маршалл"
+      - "делюкс маршал"
+      - "маршалл виллаж"
+      - "маршал виллаж"
+    exclude: []
+
+  - slug: japan-town
+    name: "Japan Town"
+    zone: "120 Myangat / Ikh Mongol"
+    search_queries:
+      - "japan town"
+      - "жапан таун"
+      - "япон таун"
+    aliases:
+      - "japan town"
+      - "japantown"
+      - "жапан таун"
+      - "япон таун"
+      - "жапантаун"
+      - "японтаун"
+    exclude: []
+
+  - slug: vega-city
+    name: "Vega City"
+    zone: "120 Myangat / Orchlon"
+    search_queries:
+      - "vega city"
+      - "вега сити"
+    aliases:
+      - "vega city"
+      - "vegacity"
+      - "вега сити"
+      - "вэга сити"
+      - "вегасити"
+    exclude: []
+
+  - slug: gerlug-vista
+    name: "Gerlug Vista"
+    zone: "National Park / E-Mart"
+    search_queries:
+      - "gerlug vista"
+      - "гэрлүг виста"
+    aliases:
+      - "gerlug vista"
+      - "gerelug vista"
+      - "gerlugvista"
+      - "гэрлүг виста"
+      - "гэрэлүг виста"
+      - "гэрлуг виста"
+      - "гэрлүгвиста"
+    exclude: []
+
+  - slug: jardin
+    name: "Jardin Residence"
+    zone: "Zaisan Foothills"
+    search_queries:
+      - "jardin"
+      - "жардин"
+    aliases:
+      - "jardin"
+      - "jardin residence"
+      - "jardin luxury"
+      - "жардин"
+      - "жардин резиденс"
+      - "жардин хотхон"
+      - "жардэн"
+      - "жардэн резиденс"
+    exclude: []
+
+  - slug: seoul-royal-county
+    name: "Seoul Royal County"
+    zone: "Zaisan Foothills"
+    search_queries:
+      - "seoul royal"
+      - "сөүл роял"
+      - "сөүл рояал"
+    aliases:
+      - "seoul royal county"
+      - "seoul royal"
+      - "seoul county"
+      - "сөүл роял каунти"
+      - "сөүл рояал каунти"
+      - "сөүл рояль каунти"
+      - "соул роял каунти"
+      - "соул рояал каунти"
+      - "сөүл роял"
+      - "сөүл рояал"
+      - "сөүл рояль"
+      - "сөүл каунти"
+    exclude:
+      - "royal green"
+      - "роял грийн"
+      - "royal crown"
+      - "роял кроун"
+      - "royal garden"
+      - "роял гарден"
