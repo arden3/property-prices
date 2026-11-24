@@ -1,0 +1,53 @@
+name: Every-3-Days Family Email Digest
+
+on:
+  schedule:
+    # 01:30 UTC (09:30 AM UB time) every 3 days
+    - cron: "30 1 */3 * *"
+  workflow_dispatch:
+    inputs:
+      lookback_days:
+        description: "Days to look back for fresh finds"
+        required: false
+        default: "3"
+      dry_run:
+        description: "Preview only without sending email"
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  send-digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install ub-prices
+        run: pip install -e .
+
+      - name: Send 3-day family email digest
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_APP_PASSWORD: ${{ secrets.SMTP_APP_PASSWORD }}
+          DIGEST_RECIPIENTS: ${{ secrets.DIGEST_RECIPIENTS }}
+          LOOKBACK_DAYS: ${{ inputs.lookback_days || '3' }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          if [ "${DRY_RUN}" != "true" ] && { [ -z "${SMTP_USER}" ] || [ -z "${SMTP_APP_PASSWORD}" ] || [ -z "${DIGEST_RECIPIENTS}" ]; }; then
+            echo "::warning::Email secrets (SMTP_USER, SMTP_APP_PASSWORD, DIGEST_RECIPIENTS) are not configured yet in Settings -> Secrets and variables -> Actions. Running dry-run preview instead."
+            DRY_RUN="true"
+          fi
+          ARGS="--lookback-days ${LOOKBACK_DAYS} --top-n 8"
+          if [ "${DRY_RUN}" = "true" ]; then
+            ARGS="${ARGS} --dry-run"
+          fi
+          ub-prices email-digest ${ARGS}

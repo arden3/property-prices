@@ -235,3 +235,4 @@ def test_full_lifecycle_scan_price_drop_delisting_and_views(tmp_path: Path):
     assert "Rent (Түрээс)" in html
     assert "Buy (Зарна)" in html
     assert "RG_Panorama" in html
+    assert "✨ New Finds" in html

@@ -52,8 +52,21 @@ python -m venv .venv
 ```
 You can also register it on your laptop without sleep (`.\scripts\register_task.ps1 -RunAt "09:30" -NoSleepAfter`). Because `scripts/run_daily.ps1` pulls via `git pull --rebase` and checks `data/scrape_runs.csv` for today's UTC date, whichever machine runs first does the scan and the second machine skips cleanly with zero duplicate scans or Git conflicts.
 
-### 3. GitHub Actions CI & Downloadable SQLite Artifact
-Every push to `main` automatically runs `pytest`, prints `reports/latest.md` to the GitHub Actions Job Summary, and uploads a fresh `ub_prices.db` artifact (30-day retention).
+### 3. GitHub Actions CI, Live Dashboard & Downloadable SQLite Artifact
+Every push to `main` automatically runs `pytest`, prints `reports/latest.md` to the GitHub Actions Job Summary, uploads a fresh `ub_prices.db` artifact (30-day retention), and deploys `docs/index.html` to GitHub Pages.
+
+### 4. Automatic Every-3-Days Email Digest (GitHub Actions)
+`.github/workflows/email_digest.yml` sends a formatted HTML email every 3 days (09:30 AM UB time) with the best new in-budget rentals (`≤ 6.1M ₮/mo`), best new sales (`< 1.2B ₮`), top price cuts, and the 8-complex median snapshot.
+
+Because this repository is public, **never commit email addresses or passwords**—configure three **Repository Secrets** under **Settings → Secrets and variables → Actions**:
+- `SMTP_USER` — your Gmail address (`<you>@gmail.com`)
+- `SMTP_APP_PASSWORD` — a 16-character Google App Password (requires 2-Step Verification)
+- `DIGEST_RECIPIENTS` — comma-separated recipient emails (`person1@gmail.com,person2@gmail.com`)
+
+You can preview locally anytime without sending mail:
+```powershell
+ub-prices email-digest --dry-run --preview-html logs/digest_preview.html
+```
 
 ## Analyzing the Database
 

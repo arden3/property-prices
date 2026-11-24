@@ -526,6 +526,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       font-weight: 700;
     }
     .b-good { background: var(--green-soft); color: var(--green); }
+    .b-new { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: #ffffff; }
     .b-sun { background: #fef9c3; color: #854d0e; }
     .b-cut { background: var(--rose-soft); color: var(--rose); }
     .b-neutral { background: #f1f5f9; color: #475569; }
@@ -723,6 +724,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         </div>
         <div class="chip-row">
           <span class="chip-label">Family Preferences:</span>
+          <span class="chip" data-key="onlyNew">✨ New Finds</span>
           <span class="chip" data-key="southWest">☀️ South / West Windows</span>
           <span class="chip" data-key="parking">🚗 Interior Parking</span>
           <span class="chip" data-key="highFloor">🏢 Higher Floor</span>
@@ -829,8 +831,22 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       parking: false,
       highFloor: false,
       priceCut: false,
+      onlyNew: false,
       showOverpriced: false,
     };
+
+    const RECENT_POST_RE = /(өнөөдөр|өчигдөр|цагийн\s*өмнө|минутын\s*өмнө|саяхан|^[1-3]\s*өдрийн\s*өмнө)/i;
+    const OLD_POST_RE = /(долоо\s*хоногийн|сарын|жилийн|^[4-9]\s*өдрийн|^\d{2,}\s*өдрийн)/i;
+
+    function isFreshFind(l) {
+      const pub = (l.published_label || "").trim();
+      if (pub && RECENT_POST_RE.test(pub)) return true;
+      if (pub && OLD_POST_RE.test(pub)) return false;
+      if (!l.first_seen_at) return false;
+      const seenMs = Date.parse(l.first_seen_at);
+      if (Number.isNaN(seenMs)) return false;
+      return (Date.now() - seenMs) <= 3 * 24 * 3600 * 1000;
+    }
 
     function isOverpriced(l) {
       if (l.total_price_mnt == null) return false;
@@ -923,6 +939,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
         if (state.parking && !(l.parking_status === "included" || l.parking_status === "available")) return false;
         if (state.highFloor && l.floor_tier !== "high") return false;
         if (state.priceCut && !(l.effective_drop_pct && l.effective_drop_pct > 0)) return false;
+        if (state.onlyNew && !isFreshFind(l)) return false;
         return true;
       }).sort((a, b) => {
         switch (state.sort) {
@@ -995,6 +1012,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       const floorTxt = l.floor != null
         ? (l.total_floors ? `${l.floor}/${l.total_floors}F` : `${l.floor}F`)
         : "Floor —";
+      const newBadge = isFreshFind(l)
+        ? `<span class="badge b-new">✨ New</span>`
+        : "";
       const floorBadge = l.floor_tier === "high" ? `<span class="badge b-good">🏢 High floor</span>` : "";
       const winBadge = l.window_facing
         ? `<span class="badge ${(l.faces_south || l.faces_west) ? "b-sun" : "b-neutral"}">☀️ ${l.window_facing}</span>`
@@ -1029,7 +1049,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             <div class="l-specs">
               <strong>${l.rooms} өрөө</strong> · <strong>${l.area_sqm} m²</strong> · <span>${floorTxt}</span>${extraSpec ? ` · <span>${extraSpec}</span>` : ""}
             </div>
-            <div class="badges-wrap">${winBadge}${parkBadge}${floorBadge}${cutBadge}${dupBadge}</div>
+            <div class="badges-wrap">${newBadge}${winBadge}${parkBadge}${floorBadge}${cutBadge}${dupBadge}</div>
             <div class="l-title">${l.title}</div>
             <div class="l-footer">
               <div class="l-meta-row">
@@ -1271,7 +1291,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       });
     });
     document.getElementById("btnReset").addEventListener("click", () => {
-      Object.assign(state, { complex: "all", rooms: "all", minArea: "", maxPrice: "", sort: "family", southWest: false, parking: false, highFloor: false, priceCut: false });
+      Object.assign(state, { complex: "all", rooms: "all", minArea: "", maxPrice: "", sort: "family", southWest: false, parking: false, highFloor: false, priceCut: false, onlyNew: false });
       document.getElementById("fComplex").value = "all";
       document.getElementById("fRooms").value = "all";
       document.getElementById("fMinArea").value = "";

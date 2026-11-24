@@ -9,6 +9,7 @@ from pathlib import Path
 
 from ub_prices.config import load_config
 from ub_prices.dashboard import generate_dashboard
+from ub_prices.email_digest import run_email_digest
 from ub_prices.matching import ComplexMatcher
 from ub_prices.models import DealType
 from ub_prices.normalize import enrich_listing_record
@@ -90,6 +91,23 @@ def _build_parser() -> argparse.ArgumentParser:
     p_dash.add_argument(
         "--output", type=Path, default=Path("docs/index.html"), help="Output HTML path"
     )
+
+    # email-digest
+    p_email = sub.add_parser("email-digest", help="Build and send 3-day HTML email digest")
+    p_email.add_argument("--lookback-days", type=int, default=3, help="Days to look back for fresh finds")
+    p_email.add_argument("--top-n", type=int, default=8, help="Max top picks per section (Rent / Buy)")
+    p_email.add_argument(
+        "--dashboard-url",
+        default="https://arden3.github.io/property-prices/",
+        help="Public dashboard URL linked in the email",
+    )
+    p_email.add_argument(
+        "--preview-html",
+        type=Path,
+        default=None,
+        help="Optional local path to save the rendered HTML email",
+    )
+    p_email.add_argument("--dry-run", action="store_true", help="Render digest without sending email")
 
     # inspect-match
     p_match = sub.add_parser("inspect-match", help="Test complex matching on a sample title/text")
@@ -183,6 +201,23 @@ def main(argv: list[str] | None = None) -> int:
             db_path=db_path,
         )
         print(f"Dashboard written: {dash}")
+        return 0
+
+    if args.command == "email-digest":
+        build_sqlite_db(args.data_dir)
+        subject, sent_count = run_email_digest(
+            config=cfg,
+            data_dir=args.data_dir,
+            lookback_days=args.lookback_days,
+            top_n=args.top_n,
+            dashboard_url=args.dashboard_url,
+            preview_html=args.preview_html,
+            dry_run=args.dry_run,
+        )
+        if args.dry_run:
+            print(f"Email digest dry-run complete: {subject}")
+        else:
+            print(f"Email digest sent to {sent_count} recipient(s): {subject}")
         return 0
 
     if args.command == "inspect-match":
