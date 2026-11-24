@@ -107,24 +107,27 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ulaanbaatar Family Property Tracker — Rent &amp; Buy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <style>
     :root {
-      --bg-top: #fff9f2;
+      --bg-top: #f8f7ff;
       --bg-bot: #f1f5f9;
       --surface: #ffffff;
       --surface-soft: #f8fafc;
       --border: #e2e8f0;
       --text: #1e293b;
       --muted: #64748b;
-      --rent: #0284c7;
-      --rent-dark: #0369a1;
-      --rent-soft: #e0f2fe;
+      --rent: #4f46e5;
+      --rent-dark: #4338ca;
+      --rent-soft: #e0e7ff;
       --buy: #d97706;
       --buy-dark: #b45309;
       --buy-soft: #fef3c7;
-      --teal: #0f766e;
-      --teal-soft: #ccfbf1;
+      --indigo: #4f46e5;
+      --indigo-soft: #e0e7ff;
       --green: #15803d;
       --green-soft: #dcfce7;
       --rose: #be123c;
@@ -136,7 +139,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+      font-family: "Noto Sans", "Segoe UI", Roboto, system-ui, -apple-system, sans-serif;
       background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bot) 420px, var(--bg-bot) 100%);
       color: var(--text);
       line-height: 1.45;
@@ -144,10 +147,10 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       -webkit-font-smoothing: antialiased;
     }
     .hero {
-      background: linear-gradient(125deg, #0f766e 0%, #0284c7 52%, #6366f1 100%);
+      background: linear-gradient(125deg, #312e81 0%, #4f46e5 55%, #7c3aed 100%);
       color: #fff;
       padding: 24px 16px 26px;
-      box-shadow: 0 4px 18px rgba(15, 23, 42, 0.14);
+      box-shadow: 0 4px 18px rgba(49, 46, 129, 0.22);
     }
     .hero-inner {
       max-width: 1280px;
@@ -218,8 +221,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       color: var(--muted);
     }
     .mode-btn.active-rent {
-      background: linear-gradient(135deg, #0284c7, #0ea5e9);
-      border-color: #0284c7;
+      background: linear-gradient(135deg, #4338ca, #6366f1);
+      border-color: #4338ca;
       color: #fff;
     }
     .mode-btn.active-rent .count-pill { background: rgba(255,255,255,0.22); color: #fff; }
@@ -230,8 +233,8 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     }
     .mode-btn.active-buy .count-pill { background: rgba(255,255,255,0.22); color: #fff; }
     .mode-btn.active-compare {
-      background: linear-gradient(135deg, #0f766e, #14b8a6);
-      border-color: #0f766e;
+      background: linear-gradient(135deg, #5b21b6, #7c3aed);
+      border-color: #5b21b6;
       color: #fff;
     }
     .mode-btn.active-compare .count-pill { background: rgba(255,255,255,0.22); color: #fff; }
@@ -268,7 +271,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       background-position: center;
     }
     .c-tile:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
-    .c-tile.selected { border-color: #0f172a; box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.35); }
+    .c-tile.selected { border-color: #312e81; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.35); }
     .c-tile.dimmed { opacity: 0.45; }
     .c-tile-scrim {
       position: absolute;
@@ -323,7 +326,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     .kpi {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-top: 4px solid var(--teal);
+      border-top: 4px solid var(--indigo);
       border-radius: var(--radius);
       padding: 13px 15px;
       box-shadow: var(--shadow);
@@ -406,9 +409,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       transition: all 0.15s ease;
     }
     .chip.on {
-      background: var(--teal-soft);
-      border-color: var(--teal);
-      color: #115e59;
+      background: var(--indigo-soft);
+      border-color: var(--indigo);
+      color: #312e81;
     }
     .chip-reset {
       margin-left: auto;
@@ -473,7 +476,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       font-weight: 750;
       font-size: 0.76rem;
       color: #fff;
-      background: rgba(15, 118, 110, 0.9);
+      background: rgba(67, 56, 202, 0.92);
       border: 1px solid rgba(255,255,255,0.35);
       padding: 3px 9px;
       border-radius: 999px;
@@ -561,8 +564,47 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       box-shadow: 0 2px 6px rgba(15, 23, 42, 0.14);
     }
     .btn-cta:hover { filter: brightness(1.06); transform: translateY(-1px); }
-    .btn-cta.rent-btn { background: linear-gradient(135deg, #0284c7, #0ea5e9); }
+    .btn-cta.rent-btn { background: linear-gradient(135deg, #4338ca, #6366f1); }
     .btn-cta.buy-btn { background: linear-gradient(135deg, #d97706, #f59e0b); }
+
+    /* Overpriced Hidden Drawer */
+    .overpriced-bar {
+      margin: 8px 0 22px;
+      padding: 12px 16px;
+      background: var(--surface);
+      border: 1px dashed #cbd5e1;
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .overpriced-link {
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--indigo);
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .overpriced-link:hover { color: #312e81; }
+    .overpriced-section {
+      margin-bottom: 24px;
+      padding: 16px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    .overpriced-section h3 {
+      margin: 0 0 12px;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
 
     /* Charts & Tables */
     .charts-grid {
@@ -586,7 +628,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     tr:hover td { background: #f8fafc; }
     .tbl-btn {
       display: inline-block;
-      background: #0f766e;
+      background: #4f46e5;
       color: #fff;
       text-decoration: none;
       padding: 4px 10px;
@@ -594,7 +636,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       font-weight: 650;
       font-size: 0.78rem;
     }
-    .tbl-btn:hover { background: #115e59; }
+    .tbl-btn:hover { background: #3730a3; }
     .empty { text-align: center; color: var(--muted); padding: 36px 16px; font-size: 0.95rem; }
     .hidden { display: none !important; }
     @media (max-width: 720px) {
@@ -690,6 +732,15 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       <div id="resultCount" class="section-title" style="text-transform:none;letter-spacing:0;"></div>
       <div class="listing-cards" id="listingCards"></div>
 
+      <div id="overpricedBar" class="overpriced-bar hidden">
+        <span id="overpricedSummary" style="font-size:0.86rem;color:var(--muted);"></span>
+        <button id="btnToggleOverpriced" class="overpriced-link" onclick="toggleOverpriced()">Show overpriced units</button>
+      </div>
+      <div id="overpricedSection" class="overpriced-section hidden">
+        <h3 id="overpricedTitle">Overpriced Units</h3>
+        <div class="listing-cards" id="overpricedCards" style="margin-bottom:0;"></div>
+      </div>
+
       <div class="charts-grid">
         <div class="card">
           <h2 id="dealBarTitle">Median Monthly Rent by Complex</h2>
@@ -762,6 +813,9 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
     const DATA = __DASHBOARD_JSON__;
     const COMPLEX_BY_SLUG = Object.fromEntries(DATA.complexes.map((c) => [c.slug, c]));
 
+    const RENT_OVERPRICED_GT = 6100000;       // > 6.1M ₮/mo
+    const SALE_OVERPRICED_GTE = 1200000000;   // >= 1.2B ₮
+
     const state = {
       mode: "rent", // "rent" | "sale" | "compare"
       complex: "all",
@@ -773,7 +827,14 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       parking: false,
       highFloor: false,
       priceCut: false,
+      showOverpriced: false,
     };
+
+    function isOverpriced(l) {
+      if (l.total_price_mnt == null) return false;
+      if (l.deal_type === "rent") return l.total_price_mnt > RENT_OVERPRICED_GT;
+      return l.total_price_mnt >= SALE_OVERPRICED_GTE;
+    }
 
     const fmtM = (v) => {
       if (v == null) return "—";
@@ -927,71 +988,101 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       `;
     }
 
-    function renderCards(items) {
+    function renderCardHtml(l, isRent) {
+      const comp = COMPLEX_BY_SLUG[l.complex_slug] || {};
+      const floorTxt = l.floor != null
+        ? (l.total_floors ? `${l.floor}/${l.total_floors}F` : `${l.floor}F`)
+        : "Floor —";
+      const floorBadge = l.floor_tier === "high" ? `<span class="badge b-good">🏢 High floor</span>` : "";
+      const winBadge = l.window_facing
+        ? `<span class="badge ${(l.faces_south || l.faces_west) ? "b-sun" : "b-neutral"}">☀️ ${l.window_facing}</span>`
+        : "";
+      const parkBadge = l.parking_status === "included"
+        ? `<span class="badge b-good">🚗 Parking incl.</span>`
+        : (l.parking_status === "available" ? `<span class="badge b-good">🚗 Parking avail.</span>` : "");
+      const cutBadge = l.effective_drop_pct > 0
+        ? `<span class="badge b-cut">📉 -${l.effective_drop_pct.toFixed(1)}% cut</span>`
+        : "";
+      const dupBadge = l.duplicate_listing_count > 1
+        ? `<span class="badge b-neutral">👥 ${l.duplicate_listing_count} realtor ads</span>`
+        : "";
+      const extraSpec = isRent
+        ? [l.payment_terms, l.furnished ? l.furnished.replace("_", " ") : ""].filter(Boolean).join(" · ")
+        : (l.year_built ? `Built ${l.year_built}` : "");
+
+      return `
+        <article class="l-card">
+          <div class="c-banner" style="${bgStyle(comp)}">
+            <div>
+              <div class="c-banner-name">${l.complex_name}</div>
+              <div class="c-banner-zone">${l.zone || ""}</div>
+            </div>
+            <span class="score-pill">Match ${l.family_score}/6</span>
+          </div>
+          <div class="l-body">
+            <div class="l-price-row">
+              <div class="l-price ${isRent ? "rent-col" : "buy-col"}">${fmtM(l.total_price_mnt)}${isRent ? "/mo" : ""}</div>
+              <div class="l-sqm">${isRent ? (l.price_per_sqm_mnt ? Math.round(l.price_per_sqm_mnt/1000) + "k ₮/m²" : "") : fmtSqm(l.price_per_sqm_mnt)}</div>
+            </div>
+            <div class="l-specs">
+              <strong>${l.rooms} өрөө</strong> · <strong>${l.area_sqm} m²</strong> · <span>${floorTxt}</span>${extraSpec ? ` · <span>${extraSpec}</span>` : ""}
+            </div>
+            <div class="badges-wrap">${winBadge}${parkBadge}${floorBadge}${cutBadge}${dupBadge}</div>
+            <div class="l-title">${l.title}</div>
+            <div class="l-footer">
+              <div class="l-meta-row">
+                <span>Posted: ${l.published_label || l.first_seen_at.slice(0, 10)}</span>
+                <span>ID #${l.external_id}</span>
+              </div>
+              <a class="btn-cta ${isRent ? "rent-btn" : "buy-btn"}" href="${l.url}" target="_blank" rel="noopener">
+                <span>📷 View Photos &amp; Full Listing on Unegui ↗</span>
+              </a>
+            </div>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderCards(inBudget, overpriced) {
       const isRent = state.mode === "rent";
+      const capText = isRent ? "≤ 6.1M ₮/mo" : "< 1.2B ₮";
+      const overText = isRent ? "> 6.1M ₮/mo" : "≥ 1.2B ₮";
+
       document.getElementById("resultCount").textContent =
-        `Showing ${items.length} unique ${isRent ? "rental" : "for-sale"} apartments`;
+        `Showing ${inBudget.length} unique ${isRent ? "rental" : "for-sale"} apartments (${capText})` +
+        (overpriced.length ? ` · ${overpriced.length} overpriced hidden` : "");
 
       const wrap = document.getElementById("listingCards");
-      if (!items.length) {
-        wrap.innerHTML = `<div class="empty" style="grid-column:1/-1;">No ${isRent ? "rental" : "sale"} apartments match your current filters. Try clearing one filter above.</div>`;
-        return;
+      if (!inBudget.length) {
+        wrap.innerHTML = `<div class="empty" style="grid-column:1/-1;">No ${isRent ? "rental" : "sale"} apartments within ${capText} match your current filters.</div>`;
+      } else {
+        wrap.innerHTML = inBudget.map((l) => renderCardHtml(l, isRent)).join("");
       }
 
-      wrap.innerHTML = items.map((l) => {
-        const comp = COMPLEX_BY_SLUG[l.complex_slug] || {};
-        const floorTxt = l.floor != null
-          ? (l.total_floors ? `${l.floor}/${l.total_floors}F` : `${l.floor}F`)
-          : "Floor —";
-        const floorBadge = l.floor_tier === "high" ? `<span class="badge b-good">🏢 High floor</span>` : "";
-        const winBadge = l.window_facing
-          ? `<span class="badge ${(l.faces_south || l.faces_west) ? "b-sun" : "b-neutral"}">☀️ ${l.window_facing}</span>`
-          : "";
-        const parkBadge = l.parking_status === "included"
-          ? `<span class="badge b-good">🚗 Parking incl.</span>`
-          : (l.parking_status === "available" ? `<span class="badge b-good">🚗 Parking avail.</span>` : "");
-        const cutBadge = l.effective_drop_pct > 0
-          ? `<span class="badge b-cut">📉 -${l.effective_drop_pct.toFixed(1)}% cut</span>`
-          : "";
-        const dupBadge = l.duplicate_listing_count > 1
-          ? `<span class="badge b-neutral">👥 ${l.duplicate_listing_count} realtor ads</span>`
-          : "";
-        const extraSpec = isRent
-          ? [l.payment_terms, l.furnished ? l.furnished.replace("_", " ") : ""].filter(Boolean).join(" · ")
-          : (l.year_built ? `Built ${l.year_built}` : "");
+      const bar = document.getElementById("overpricedBar");
+      const sec = document.getElementById("overpricedSection");
+      if (!overpriced.length) {
+        bar.classList.add("hidden");
+        sec.classList.add("hidden");
+        return;
+      }
+      bar.classList.remove("hidden");
+      document.getElementById("overpricedSummary").textContent =
+        `${overpriced.length} ${isRent ? "rental" : "sale"} ${overpriced.length === 1 ? "unit" : "units"} priced ${overText} hidden from the main list.`;
+      document.getElementById("btnToggleOverpriced").textContent =
+        state.showOverpriced ? `Hide overpriced units (${overpriced.length}) ▴` : `Overpriced units (${overpriced.length}) ▾`;
+      document.getElementById("overpricedTitle").textContent =
+        `Overpriced ${isRent ? "Rentals (> 6.1M ₮/mo)" : "Apartments for Sale (≥ 1.2B ₮)"} — ${overpriced.length} units`;
 
-        return `
-          <article class="l-card">
-            <div class="c-banner" style="${bgStyle(comp)}">
-              <div>
-                <div class="c-banner-name">${l.complex_name}</div>
-                <div class="c-banner-zone">${l.zone || ""}</div>
-              </div>
-              <span class="score-pill">Match ${l.family_score}/6</span>
-            </div>
-            <div class="l-body">
-              <div class="l-price-row">
-                <div class="l-price ${isRent ? "rent-col" : "buy-col"}">${fmtM(l.total_price_mnt)}${isRent ? "/mo" : ""}</div>
-                <div class="l-sqm">${isRent ? (l.price_per_sqm_mnt ? Math.round(l.price_per_sqm_mnt/1000) + "k ₮/m²" : "") : fmtSqm(l.price_per_sqm_mnt)}</div>
-              </div>
-              <div class="l-specs">
-                <strong>${l.rooms} өрөө</strong> · <strong>${l.area_sqm} m²</strong> · <span>${floorTxt}</span>${extraSpec ? ` · <span>${extraSpec}</span>` : ""}
-              </div>
-              <div class="badges-wrap">${winBadge}${parkBadge}${floorBadge}${cutBadge}${dupBadge}</div>
-              <div class="l-title">${l.title}</div>
-              <div class="l-footer">
-                <div class="l-meta-row">
-                  <span>Posted: ${l.published_label || l.first_seen_at.slice(0, 10)}</span>
-                  <span>ID #${l.external_id}</span>
-                </div>
-                <a class="btn-cta ${isRent ? "rent-btn" : "buy-btn"}" href="${l.url}" target="_blank" rel="noopener">
-                  <span>📷 View Photos &amp; Full Listing on Unegui ↗</span>
-                </a>
-              </div>
-            </div>
-          </article>
-        `;
-      }).join("");
+      sec.classList.toggle("hidden", !state.showOverpriced);
+      if (state.showOverpriced) {
+        document.getElementById("overpricedCards").innerHTML = overpriced.map((l) => renderCardHtml(l, isRent)).join("");
+      }
+    }
+
+    function toggleOverpriced() {
+      state.showOverpriced = !state.showOverpriced;
+      renderDealSection();
     }
 
     let dealBarChart = null;
@@ -1119,7 +1210,7 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
             labels: days,
             datasets: [
               { label: "Avg Sale (M ₮/m²)", data: days.map((d) => saleByDay[d] ?? null), borderColor: "#d97706", backgroundColor: "#d97706", tension: 0.25 },
-              { label: "Avg Rent (M ₮/mo)", data: days.map((d) => rentByDay[d] ?? null), borderColor: "#0284c7", backgroundColor: "#0284c7", tension: 0.25 },
+              { label: "Avg Rent (M ₮/mo)", data: days.map((d) => rentByDay[d] ?? null), borderColor: "#4f46e5", backgroundColor: "#4f46e5", tension: 0.25 },
             ],
           },
           options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: false } } },
@@ -1131,15 +1222,18 @@ HTML_TEMPLATE = r"""<!DOCTYPE html>
       const isRent = state.mode === "rent";
       document.getElementById("lblMaxPrice").textContent = isRent ? "Max Rent (M ₮/mo)" : "Max Total Price (M ₮)";
       renderComplexStrip();
-      const items = getFiltered();
-      renderKPIs(items);
-      renderCards(items);
+      const allMatched = getFiltered();
+      const inBudget = allMatched.filter((l) => !isOverpriced(l));
+      const overpriced = allMatched.filter((l) => isOverpriced(l));
+      renderKPIs(inBudget);
+      renderCards(inBudget, overpriced);
       renderDealCharts();
     }
 
     function switchMode(mode) {
       state.mode = mode;
       state.maxPrice = "";
+      state.showOverpriced = false;
       document.getElementById("fMaxPrice").value = "";
 
       document.getElementById("btnModeRent").className = "mode-btn" + (mode === "rent" ? " active-rent" : "");
