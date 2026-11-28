@@ -6,3 +6,4 @@ run_id,source,started_at,finished_at,status,is_full_scan,requests_made,index_car
 2026-11-24_5a602414,unegui,2026-11-24T07:23:59+00:00,2026-11-24T07:30:13+00:00,partial,true,83,4125,1065,1,0,0,0,detail_cap_reached:1
 2026-11-25_d9d3503d,unegui,2026-11-25T01:00:04+00:00,2026-11-25T01:19:05+00:00,partial,true,192,3491,969,120,112,0,0,detail_cap_reached:120
 2026-11-27_985748ce,unegui,2026-11-27T01:00:04+00:00,2026-11-27T01:17:50+00:00,partial,true,192,3478,938,120,106,4,0,detail_cap_reached:120
+2026-11-28_0917389b,unegui,2026-11-28T01:00:05+00:00,2026-11-28T01:17:14+00:00,partial,true,189,3296,934,120,107,0,0,detail_cap_reached:120
